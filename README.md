@@ -59,7 +59,7 @@ Depending on Bluesky’s data policies, *raw data may not be included* and may i
 ## 📁 Repository Structure
 
 ```
-In construction
+In progress
 ```
 
 ---
@@ -89,7 +89,9 @@ Suggestions, improvements, alternative methods, or discussions about the origina
 
 ## 📄 License
 
-In construction
+```
+In progress
+```
 
 ---
 
