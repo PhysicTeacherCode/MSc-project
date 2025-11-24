@@ -7,6 +7,8 @@ This repository is an attempt to reproduce — and adapt — the results of the 
 
 The main goal is to investigate whether the same statistical properties observed in Twitter communities also emerge in the **Bluesky** social network.
 
+This is the [link](https://drive.google.com/drive/folders/1w2yRyMeoPIUw0AFl0sN3HXia6j4HNqm-?usp=sharing) for data collected so far.
+
 ---
 
 ## 📌 Motivation
