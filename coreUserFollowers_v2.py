@@ -1,7 +1,12 @@
-from concurrent.futures import ThreadPoolExecutor, as_completed
-import pandas as pd
-import requests
+# Esse programa foi criado para fazer o scrapping no API do Bluesky, coletando o nome de todos os
+# followers de cada 'core_user' previamente selecionados arbitrariamente, para posterior coleta dos
+# posts de cada um dos followers
 
+from concurrent.futures import ThreadPoolExecutor, as_completed # Para evitar ficar dias rodando o código
+import pandas as pd # criar tabelas
+import requests # Usar o API do Bluesky
+
+# Lista com os usuários principais (escolhidos arbitrariamente)
 core_user = [
 "randall.gobirds.online",
 "msevelyn.bsky.social",
@@ -29,10 +34,11 @@ core_user = [
 # 1. Buscar seguidores
 # -----------------------
 def get_followers(actor_handle):
-    url = "https://public.api.bsky.app/xrpc/app.bsky.graph.getFollowers"
-    cursor = None
-    followers = []
+    url = "https://public.api.bsky.app/xrpc/app.bsky.graph.getFollowers" # URL do API do Bluesky
+    cursor = None # Necesário para armazenar uma quantidade maior de usuário (limite por chamada = 100)
+    followers = [] # Lista onde será armazenada os usuários
 
+    # Chama o API e coleta os usuários (followers)
     while True:
         params = {
             "actor": actor_handle,
@@ -59,9 +65,6 @@ def get_followers(actor_handle):
         if not cursor:
             break
 
-        # pequena pausa para respeitar limites
-        # time.sleep(0.3)
-
     return actor_handle, followers
 
 # -----------------------
@@ -69,6 +72,8 @@ def get_followers(actor_handle):
 # -----------------------
 followers_list = []
 collumnsName = []
+
+# Roda o programa para coletar o nome de 20 Followers ao mesmo tempo
 with ThreadPoolExecutor(max_workers=20) as executor:
     futures = [executor.submit(get_followers, user) for user in core_user]
     for future in as_completed(futures):
@@ -76,6 +81,7 @@ with ThreadPoolExecutor(max_workers=20) as executor:
         followers_list.append(users)
         collumnsName.append(actor)
 
+# Para criar o arquivo EXCEL
 #df = pd.DataFrame(followers_list).T
 #df.columns = collumnsName
 #df.to_excel("all_followers.xlsx", index=False)
@@ -84,4 +90,5 @@ with ThreadPoolExecutor(max_workers=20) as executor:
 # 3. Visualizando
 # -----------------------
 for x in followers_list:
+
    print(len(x),x)
