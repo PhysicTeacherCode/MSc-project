@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-02-15">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="node">
+      <attribute id="0" title="level" type="long" />
+    </attributes>
+    <nodes>
+      <node id="elphaba-wins-55.bsky.social" label="elphaba-wins-55.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="nadaze2.bsky.social" label="nadaze2.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="drspookyer.bsky.social" label="drspookyer.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="samlw.bsky.social" label="samlw.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="brendaautumn.bsky.social" label="brendaautumn.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="swissmrs3.bsky.social" label="swissmrs3.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="makzsar.bsky.social" label="makzsar.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ccgrl33.bsky.social" label="ccgrl33.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="emmettdoog.bsky.social" label="emmettdoog.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="jackhayes9398.bsky.social" label="jackhayes9398.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="kcamp19.bsky.social" label="kcamp19.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jmm426.bsky.social" label="jmm426.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="plkleinauthor.bsky.social" label="plkleinauthor.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="blue2354.bsky.social" label="blue2354.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="katelovesmath.bsky.social" label="katelovesmath.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="diatoms.bsky.social" label="diatoms.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="crazycatlady239.bsky.social" label="crazycatlady239.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="elphaba-wins-55.bsky.social" target="nadaze2.bsky.social" id="0" />
+      <edge source="elphaba-wins-55.bsky.social" target="katelovesmath.bsky.social" id="1" />
+      <edge source="nadaze2.bsky.social" target="blue2354.bsky.social" id="2" />
+      <edge source="nadaze2.bsky.social" target="jmm426.bsky.social" id="3" />
+      <edge source="nadaze2.bsky.social" target="ccgrl33.bsky.social" id="4" />
+      <edge source="nadaze2.bsky.social" target="brendaautumn.bsky.social" id="5" />
+      <edge source="nadaze2.bsky.social" target="swissmrs3.bsky.social" id="6" />
+      <edge source="nadaze2.bsky.social" target="jackhayes9398.bsky.social" id="7" />
+      <edge source="nadaze2.bsky.social" target="kcamp19.bsky.social" id="8" />
+      <edge source="drspookyer.bsky.social" target="katelovesmath.bsky.social" id="9" />
+      <edge source="drspookyer.bsky.social" target="emmettdoog.bsky.social" id="10" />
+      <edge source="samlw.bsky.social" target="katelovesmath.bsky.social" id="11" />
+      <edge source="samlw.bsky.social" target="emmettdoog.bsky.social" id="12" />
+      <edge source="brendaautumn.bsky.social" target="katelovesmath.bsky.social" id="13" />
+      <edge source="swissmrs3.bsky.social" target="katelovesmath.bsky.social" id="14" />
+      <edge source="makzsar.bsky.social" target="katelovesmath.bsky.social" id="15" />
+      <edge source="makzsar.bsky.social" target="emmettdoog.bsky.social" id="16" />
+      <edge source="ccgrl33.bsky.social" target="katelovesmath.bsky.social" id="17" />
+      <edge source="emmettdoog.bsky.social" target="jmm426.bsky.social" id="18" />
+      <edge source="emmettdoog.bsky.social" target="plkleinauthor.bsky.social" id="19" />
+      <edge source="emmettdoog.bsky.social" target="diatoms.bsky.social" id="20" />
+      <edge source="emmettdoog.bsky.social" target="crazycatlady239.bsky.social" id="21" />
+      <edge source="jackhayes9398.bsky.social" target="katelovesmath.bsky.social" id="22" />
+      <edge source="kcamp19.bsky.social" target="katelovesmath.bsky.social" id="23" />
+      <edge source="plkleinauthor.bsky.social" target="katelovesmath.bsky.social" id="24" />
+      <edge source="blue2354.bsky.social" target="katelovesmath.bsky.social" id="25" />
+      <edge source="katelovesmath.bsky.social" target="diatoms.bsky.social" id="26" />
+      <edge source="katelovesmath.bsky.social" target="crazycatlady239.bsky.social" id="27" />
+    </edges>
+  </graph>
+</gexf>

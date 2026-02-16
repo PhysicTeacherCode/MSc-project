@@ -1,0 +1,300 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-02-15">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="node">
+      <attribute id="0" title="level" type="long" />
+    </attributes>
+    <nodes>
+      <node id="missourihashish.bsky.social" label="missourihashish.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="emmajanekrupa.bsky.social" label="emmajanekrupa.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lele8787.bsky.social" label="lele8787.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="chelseaman.bsky.social" label="chelseaman.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="c-hristiane.bsky.social" label="c-hristiane.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="rsslmo.bsky.social" label="rsslmo.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bluetrain5.bsky.social" label="bluetrain5.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="globalcitizen1.bsky.social" label="globalcitizen1.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="montesanto.bsky.social" label="montesanto.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="peloblancophoto.bsky.social" label="peloblancophoto.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tjsbam.bsky.social" label="tjsbam.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="trill-will-music.bsky.social" label="trill-will-music.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="flarecode.bsky.social" label="flarecode.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="puppylove23.bsky.social" label="puppylove23.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="idoreyinutibe.bsky.social" label="idoreyinutibe.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="keitenaijin.bsky.social" label="keitenaijin.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lronlacy.bsky.social" label="lronlacy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="2bdynamic.bsky.social" label="2bdynamic.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cross-theline.bsky.social" label="cross-theline.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="moneymarkdiggla.bsky.social" label="moneymarkdiggla.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="erikdiener.bsky.social" label="erikdiener.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="coachsbarberlounge.bsky.social" label="coachsbarberlounge.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mexicoseagle.bsky.social" label="mexicoseagle.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sebastianbielstyle.bsky.social" label="sebastianbielstyle.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ziplokstudio.bsky.social" label="ziplokstudio.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="diegogaroto.bsky.social" label="diegogaroto.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="real-kamransarwar.bsky.social" label="real-kamransarwar.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="frankedson24.bsky.social" label="frankedson24.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="djgreenguy.bsky.social" label="djgreenguy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="real2024life.bsky.social" label="real2024life.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="garyhuskeyforgov.bsky.social" label="garyhuskeyforgov.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="civicanger.com" label="civicanger.com">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="djbeelow.bsky.social" label="djbeelow.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="stlouisatheists.bsky.social" label="stlouisatheists.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ladyqueet.bsky.social" label="ladyqueet.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ziplok-music.bsky.social" label="ziplok-music.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="thesourcemagazine.bsky.social" label="thesourcemagazine.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="hiroka-hiroka.bsky.social" label="hiroka-hiroka.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="dutchmom2024.bsky.social" label="dutchmom2024.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="madammmeek.bsky.social" label="madammmeek.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="missourihashish.bsky.social" target="hiroka-hiroka.bsky.social" id="0" />
+      <edge source="missourihashish.bsky.social" target="thesourcemagazine.bsky.social" id="1" />
+      <edge source="emmajanekrupa.bsky.social" target="hiroka-hiroka.bsky.social" id="2" />
+      <edge source="emmajanekrupa.bsky.social" target="thesourcemagazine.bsky.social" id="3" />
+      <edge source="lele8787.bsky.social" target="hiroka-hiroka.bsky.social" id="4" />
+      <edge source="lele8787.bsky.social" target="thesourcemagazine.bsky.social" id="5" />
+      <edge source="chelseaman.bsky.social" target="hiroka-hiroka.bsky.social" id="6" />
+      <edge source="chelseaman.bsky.social" target="thesourcemagazine.bsky.social" id="7" />
+      <edge source="c-hristiane.bsky.social" target="djbeelow.bsky.social" id="8" />
+      <edge source="c-hristiane.bsky.social" target="lronlacy.bsky.social" id="9" />
+      <edge source="c-hristiane.bsky.social" target="moneymarkdiggla.bsky.social" id="10" />
+      <edge source="c-hristiane.bsky.social" target="ziplokstudio.bsky.social" id="11" />
+      <edge source="c-hristiane.bsky.social" target="ziplok-music.bsky.social" id="12" />
+      <edge source="c-hristiane.bsky.social" target="madammmeek.bsky.social" id="13" />
+      <edge source="c-hristiane.bsky.social" target="erikdiener.bsky.social" id="14" />
+      <edge source="c-hristiane.bsky.social" target="trill-will-music.bsky.social" id="15" />
+      <edge source="c-hristiane.bsky.social" target="ladyqueet.bsky.social" id="16" />
+      <edge source="c-hristiane.bsky.social" target="coachsbarberlounge.bsky.social" id="17" />
+      <edge source="c-hristiane.bsky.social" target="globalcitizen1.bsky.social" id="18" />
+      <edge source="rsslmo.bsky.social" target="hiroka-hiroka.bsky.social" id="19" />
+      <edge source="rsslmo.bsky.social" target="thesourcemagazine.bsky.social" id="20" />
+      <edge source="bluetrain5.bsky.social" target="civicanger.com" id="21" />
+      <edge source="bluetrain5.bsky.social" target="hiroka-hiroka.bsky.social" id="22" />
+      <edge source="bluetrain5.bsky.social" target="thesourcemagazine.bsky.social" id="23" />
+      <edge source="globalcitizen1.bsky.social" target="civicanger.com" id="24" />
+      <edge source="globalcitizen1.bsky.social" target="hiroka-hiroka.bsky.social" id="25" />
+      <edge source="montesanto.bsky.social" target="hiroka-hiroka.bsky.social" id="26" />
+      <edge source="montesanto.bsky.social" target="civicanger.com" id="27" />
+      <edge source="peloblancophoto.bsky.social" target="civicanger.com" id="28" />
+      <edge source="peloblancophoto.bsky.social" target="thesourcemagazine.bsky.social" id="29" />
+      <edge source="tjsbam.bsky.social" target="hiroka-hiroka.bsky.social" id="30" />
+      <edge source="tjsbam.bsky.social" target="thesourcemagazine.bsky.social" id="31" />
+      <edge source="trill-will-music.bsky.social" target="civicanger.com" id="32" />
+      <edge source="trill-will-music.bsky.social" target="hiroka-hiroka.bsky.social" id="33" />
+      <edge source="flarecode.bsky.social" target="thesourcemagazine.bsky.social" id="34" />
+      <edge source="flarecode.bsky.social" target="hiroka-hiroka.bsky.social" id="35" />
+      <edge source="puppylove23.bsky.social" target="civicanger.com" id="36" />
+      <edge source="puppylove23.bsky.social" target="hiroka-hiroka.bsky.social" id="37" />
+      <edge source="idoreyinutibe.bsky.social" target="thesourcemagazine.bsky.social" id="38" />
+      <edge source="idoreyinutibe.bsky.social" target="hiroka-hiroka.bsky.social" id="39" />
+      <edge source="keitenaijin.bsky.social" target="hiroka-hiroka.bsky.social" id="40" />
+      <edge source="keitenaijin.bsky.social" target="thesourcemagazine.bsky.social" id="41" />
+      <edge source="lronlacy.bsky.social" target="hiroka-hiroka.bsky.social" id="42" />
+      <edge source="2bdynamic.bsky.social" target="hiroka-hiroka.bsky.social" id="43" />
+      <edge source="2bdynamic.bsky.social" target="thesourcemagazine.bsky.social" id="44" />
+      <edge source="cross-theline.bsky.social" target="civicanger.com" id="45" />
+      <edge source="cross-theline.bsky.social" target="thesourcemagazine.bsky.social" id="46" />
+      <edge source="moneymarkdiggla.bsky.social" target="civicanger.com" id="47" />
+      <edge source="moneymarkdiggla.bsky.social" target="thesourcemagazine.bsky.social" id="48" />
+      <edge source="moneymarkdiggla.bsky.social" target="hiroka-hiroka.bsky.social" id="49" />
+      <edge source="erikdiener.bsky.social" target="civicanger.com" id="50" />
+      <edge source="erikdiener.bsky.social" target="hiroka-hiroka.bsky.social" id="51" />
+      <edge source="coachsbarberlounge.bsky.social" target="civicanger.com" id="52" />
+      <edge source="mexicoseagle.bsky.social" target="hiroka-hiroka.bsky.social" id="53" />
+      <edge source="mexicoseagle.bsky.social" target="thesourcemagazine.bsky.social" id="54" />
+      <edge source="sebastianbielstyle.bsky.social" target="thesourcemagazine.bsky.social" id="55" />
+      <edge source="sebastianbielstyle.bsky.social" target="hiroka-hiroka.bsky.social" id="56" />
+      <edge source="ziplokstudio.bsky.social" target="civicanger.com" id="57" />
+      <edge source="ziplokstudio.bsky.social" target="hiroka-hiroka.bsky.social" id="58" />
+      <edge source="ziplokstudio.bsky.social" target="thesourcemagazine.bsky.social" id="59" />
+      <edge source="diegogaroto.bsky.social" target="civicanger.com" id="60" />
+      <edge source="diegogaroto.bsky.social" target="hiroka-hiroka.bsky.social" id="61" />
+      <edge source="real-kamransarwar.bsky.social" target="hiroka-hiroka.bsky.social" id="62" />
+      <edge source="real-kamransarwar.bsky.social" target="thesourcemagazine.bsky.social" id="63" />
+      <edge source="frankedson24.bsky.social" target="hiroka-hiroka.bsky.social" id="64" />
+      <edge source="frankedson24.bsky.social" target="thesourcemagazine.bsky.social" id="65" />
+      <edge source="djgreenguy.bsky.social" target="civicanger.com" id="66" />
+      <edge source="djgreenguy.bsky.social" target="hiroka-hiroka.bsky.social" id="67" />
+      <edge source="real2024life.bsky.social" target="civicanger.com" id="68" />
+      <edge source="real2024life.bsky.social" target="hiroka-hiroka.bsky.social" id="69" />
+      <edge source="garyhuskeyforgov.bsky.social" target="civicanger.com" id="70" />
+      <edge source="garyhuskeyforgov.bsky.social" target="hiroka-hiroka.bsky.social" id="71" />
+      <edge source="civicanger.com" target="djbeelow.bsky.social" id="72" />
+      <edge source="civicanger.com" target="ziplok-music.bsky.social" id="73" />
+      <edge source="civicanger.com" target="ladyqueet.bsky.social" id="74" />
+      <edge source="djbeelow.bsky.social" target="hiroka-hiroka.bsky.social" id="75" />
+      <edge source="stlouisatheists.bsky.social" target="hiroka-hiroka.bsky.social" id="76" />
+      <edge source="stlouisatheists.bsky.social" target="thesourcemagazine.bsky.social" id="77" />
+      <edge source="ladyqueet.bsky.social" target="hiroka-hiroka.bsky.social" id="78" />
+      <edge source="ziplok-music.bsky.social" target="hiroka-hiroka.bsky.social" id="79" />
+      <edge source="ziplok-music.bsky.social" target="thesourcemagazine.bsky.social" id="80" />
+      <edge source="thesourcemagazine.bsky.social" target="madammmeek.bsky.social" id="81" />
+      <edge source="thesourcemagazine.bsky.social" target="dutchmom2024.bsky.social" id="82" />
+      <edge source="hiroka-hiroka.bsky.social" target="madammmeek.bsky.social" id="83" />
+      <edge source="hiroka-hiroka.bsky.social" target="dutchmom2024.bsky.social" id="84" />
+    </edges>
+  </graph>
+</gexf>

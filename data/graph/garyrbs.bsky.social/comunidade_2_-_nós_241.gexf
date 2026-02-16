@@ -1,0 +1,1713 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-02-15">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="node">
+      <attribute id="0" title="level" type="long" />
+    </attributes>
+    <nodes>
+      <node id="mariac725.bsky.social" label="mariac725.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bluepeachchaser.bsky.social" label="bluepeachchaser.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="artistblue.bsky.social" label="artistblue.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="frogerta.bsky.social" label="frogerta.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="zanezod.bsky.social" label="zanezod.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="slade68.bsky.social" label="slade68.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="designgirl32.bsky.social" label="designgirl32.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cronch33bu11.bsky.social" label="cronch33bu11.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="peking1199.bsky.social" label="peking1199.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ballybuffet.bsky.social" label="ballybuffet.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jaisonaaclements.bsky.social" label="jaisonaaclements.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rob-booth.bsky.social" label="rob-booth.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="maugie.bsky.social" label="maugie.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pastordej.bsky.social" label="pastordej.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="theliberalhalfof2.bsky.social" label="theliberalhalfof2.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rugger6300.bsky.social" label="rugger6300.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="deebot375.bsky.social" label="deebot375.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="michanko.bsky.social" label="michanko.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dillpunk206.bsky.social" label="dillpunk206.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="alcornews.bsky.social" label="alcornews.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="youniversally.bsky.social" label="youniversally.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jilltsu.bsky.social" label="jilltsu.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mutebipeter.bsky.social" label="mutebipeter.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lkmalone729.bsky.social" label="lkmalone729.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="arynewstv.bsky.social" label="arynewstv.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bruceo.bsky.social" label="bruceo.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="phoenixfawks.bsky.social" label="phoenixfawks.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bundles22.bsky.social" label="bundles22.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tuckand.bsky.social" label="tuckand.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="didsabdad.bsky.social" label="didsabdad.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="anitaw1610.bsky.social" label="anitaw1610.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="froggybottompond.bsky.social" label="froggybottompond.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="crossword-by.bsky.social" label="crossword-by.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mari-moxy.bsky.social" label="mari-moxy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rattler777.bsky.social" label="rattler777.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="alicectsd.bsky.social" label="alicectsd.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="davidbarnhouse.bsky.social" label="davidbarnhouse.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="catspice.bsky.social" label="catspice.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bonnievivante.bsky.social" label="bonnievivante.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="thepowertobeheard.bsky.social" label="thepowertobeheard.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="debbiewendt.bsky.social" label="debbiewendt.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="juj2727.bsky.social" label="juj2727.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bambikat.bsky.social" label="bambikat.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pedrotravels.bsky.social" label="pedrotravels.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bugstev2.bsky.social" label="bugstev2.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="adopt-dont-shop.bsky.social" label="adopt-dont-shop.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="n1osferatu.bsky.social" label="n1osferatu.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ournews.bsky.social" label="ournews.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="2fortea.bsky.social" label="2fortea.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="beaglegal.bsky.social" label="beaglegal.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="remoblockade.bsky.social" label="remoblockade.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bree40.bsky.social" label="bree40.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pinkysgirl.bsky.social" label="pinkysgirl.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rajachhatwal.bsky.social" label="rajachhatwal.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="trinityrae1978.bsky.social" label="trinityrae1978.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="socialt.bsky.social" label="socialt.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mnicewitness.bsky.social" label="mnicewitness.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="selinadarrell.bsky.social" label="selinadarrell.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="sarahmjessica.bsky.social" label="sarahmjessica.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fathi.bsky.social" label="fathi.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="phredsagirl.bsky.social" label="phredsagirl.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="chelseaklingon.bsky.social" label="chelseaklingon.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tammytam65.bsky.social" label="tammytam65.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="miketfrome.bsky.social" label="miketfrome.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="hollie1976.bsky.social" label="hollie1976.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="chai40.bsky.social" label="chai40.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lau-nagel.bsky.social" label="lau-nagel.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="creneesands.bsky.social" label="creneesands.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bikeman77.bsky.social" label="bikeman77.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="harrypothead.bsky.social" label="harrypothead.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="revistatierrabella.cl" label="revistatierrabella.cl">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="vanessalongoria.bsky.social" label="vanessalongoria.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tnriverkeeper.bsky.social" label="tnriverkeeper.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jewelsbrightart.bsky.social" label="jewelsbrightart.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sergiomerz-spd.bsky.social" label="sergiomerz-spd.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="coldsoupforlunch.bsky.social" label="coldsoupforlunch.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="beanbait.bsky.social" label="beanbait.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="s0me1elses.bsky.social" label="s0me1elses.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lindsay63.bsky.social" label="lindsay63.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="peppapaxpippa.bsky.social" label="peppapaxpippa.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="engclubmalaysia.bsky.social" label="engclubmalaysia.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="george257.bsky.social" label="george257.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="relevant-demand.bsky.social" label="relevant-demand.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="elle4short.bsky.social" label="elle4short.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="padoomamethod.bsky.social" label="padoomamethod.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lfinocchi.bsky.social" label="lfinocchi.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mrfjugstad.bsky.social" label="mrfjugstad.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lewishardy.bsky.social" label="lewishardy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="justmesara.bsky.social" label="justmesara.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="joanhowarth.bsky.social" label="joanhowarth.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="blindlemonn.bsky.social" label="blindlemonn.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="stormcrow616.bsky.social" label="stormcrow616.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="stoneballs.bsky.social" label="stoneballs.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="thecfw.bsky.social" label="thecfw.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="clareraynor.bsky.social" label="clareraynor.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mykulchadwyk.bsky.social" label="mykulchadwyk.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="classicgame.bsky.social" label="classicgame.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tantishiney.bsky.social" label="tantishiney.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="archibaldwolfe.bsky.social" label="archibaldwolfe.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="actouthappy.bsky.social" label="actouthappy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="peaceandkindness.bsky.social" label="peaceandkindness.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="marlowetessmer.bsky.social" label="marlowetessmer.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cutthebsfa.bsky.social" label="cutthebsfa.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="grant2c.bsky.social" label="grant2c.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="davidandgoliath.bsky.social" label="davidandgoliath.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ele369.bsky.social" label="ele369.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="marines1.bsky.social" label="marines1.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="brierfiresmom.bsky.social" label="brierfiresmom.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dennylama.bsky.social" label="dennylama.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="greenlife76.bsky.social" label="greenlife76.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cancermetaltiger.bsky.social" label="cancermetaltiger.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="indivisible-orange.bsky.social" label="indivisible-orange.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="heyitsbk1.bsky.social" label="heyitsbk1.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="kimmorgenstern.bsky.social" label="kimmorgenstern.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="thumbpicker.bsky.social" label="thumbpicker.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="brcunningham.bsky.social" label="brcunningham.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tkbecker.bsky.social" label="tkbecker.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="wiseguy482.bsky.social" label="wiseguy482.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="narvysilva.bsky.social" label="narvysilva.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="here2learn2.bsky.social" label="here2learn2.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="hpatrishark.bsky.social" label="hpatrishark.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cdkilbride322.bsky.social" label="cdkilbride322.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="swilsonwrites.bsky.social" label="swilsonwrites.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="silicagel2112.bsky.social" label="silicagel2112.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sandramotley.bsky.social" label="sandramotley.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bluestilettos.bsky.social" label="bluestilettos.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="anamericanboy.bsky.social" label="anamericanboy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jennylynne.bsky.social" label="jennylynne.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fractapp.bsky.social" label="fractapp.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="freeooo.bsky.social" label="freeooo.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tn-ease.bsky.social" label="tn-ease.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="omega2k.bsky.social" label="omega2k.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fieldtogrovewi.bsky.social" label="fieldtogrovewi.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="joseamezam.bsky.social" label="joseamezam.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="gypsywillowheart55.bsky.social" label="gypsywillowheart55.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="firstnationaltranq.bsky.social" label="firstnationaltranq.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dodiesdob.bsky.social" label="dodiesdob.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="goodgriefeditorial.bsky.social" label="goodgriefeditorial.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="valoflynn.bsky.social" label="valoflynn.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="monsatano.bsky.social" label="monsatano.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sineadpower.bsky.social" label="sineadpower.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="taxstrikenv.bsky.social" label="taxstrikenv.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dennis-1943.bsky.social" label="dennis-1943.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="nixadon.bsky.social" label="nixadon.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pmh58.bsky.social" label="pmh58.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="stingmiller.bsky.social" label="stingmiller.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="botkillerzero1.bsky.social" label="botkillerzero1.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="robertocz.bsky.social" label="robertocz.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="styx-and-stones3.bsky.social" label="styx-and-stones3.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="remainresolute.bsky.social" label="remainresolute.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tee42.bsky.social" label="tee42.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dirkfitch.bsky.social" label="dirkfitch.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="allexf931.bsky.social" label="allexf931.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pagirl.bsky.social" label="pagirl.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="imthinkingsideways.bsky.social" label="imthinkingsideways.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="tristiantateem.bsky.social" label="tristiantateem.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="homerandherstory.bsky.social" label="homerandherstory.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ramonapalin.bsky.social" label="ramonapalin.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fminseattle.bsky.social" label="fminseattle.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="spellelizondosilly.bsky.social" label="spellelizondosilly.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tristansnell.bsky.social" label="tristansnell.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="1" />
+        </attvalues>
+      </node>
+      <node id="whatshappenin.bsky.social" label="whatshappenin.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lindsaybkk.bsky.social" label="lindsaybkk.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="transhumanrights.bsky.social" label="transhumanrights.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="yttod.bsky.social" label="yttod.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cblessings.bsky.social" label="cblessings.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="turkintelguy.bsky.social" label="turkintelguy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="selimsgnidart.bsky.social" label="selimsgnidart.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="cjparker131.bsky.social" label="cjparker131.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="crunks65.bsky.social" label="crunks65.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sweetwilliamsfarm.bsky.social" label="sweetwilliamsfarm.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="anno1540.bsky.social" label="anno1540.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rneagle.bsky.social" label="rneagle.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="joessy.bsky.social" label="joessy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="maromicha.bsky.social" label="maromicha.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tlfleshmanroy.bsky.social" label="tlfleshmanroy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="analytics699.bsky.social" label="analytics699.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="petsit16.bsky.social" label="petsit16.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="edm-healthcare.bsky.social" label="edm-healthcare.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lifehaspriority.com" label="lifehaspriority.com">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ihm69.bsky.social" label="ihm69.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="wildsoundfestival.bsky.social" label="wildsoundfestival.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="gemma71.bsky.social" label="gemma71.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="speechwriterguy.bsky.social" label="speechwriterguy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pompisheart.bsky.social" label="pompisheart.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="deepsshetty.bsky.social" label="deepsshetty.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="kevalkumar.bsky.social" label="kevalkumar.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tonyb-29.bsky.social" label="tonyb-29.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="wisdomrecovery.bsky.social" label="wisdomrecovery.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="abigailesman.bsky.social" label="abigailesman.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="tdpowers.bsky.social" label="tdpowers.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="izzy-2.bsky.social" label="izzy-2.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jerr83.bsky.social" label="jerr83.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="elizabeths-sis.bsky.social" label="elizabeths-sis.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="womxnwillwin.bsky.social" label="womxnwillwin.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="musbah96.bsky.social" label="musbah96.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="changeresearch.com" label="changeresearch.com">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mesiahminded107.bsky.social" label="mesiahminded107.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lettertopalantir.bsky.social" label="lettertopalantir.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="pensive-tm.bsky.social" label="pensive-tm.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="runawayfromhumans.bsky.social" label="runawayfromhumans.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="realtuckfrumper.bsky.social" label="realtuckfrumper.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="anwarmjfheel.bsky.social" label="anwarmjfheel.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="therareearth.bsky.social" label="therareearth.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="wildchildlib.bsky.social" label="wildchildlib.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="chspeninsuladems.bsky.social" label="chspeninsuladems.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fightbackbetter.bsky.social" label="fightbackbetter.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="nectaronice.bsky.social" label="nectaronice.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="xtrabittermelon.bsky.social" label="xtrabittermelon.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="jomarie05.bsky.social" label="jomarie05.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="shopysquares.com" label="shopysquares.com">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dogs-should-rule.bsky.social" label="dogs-should-rule.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="kinlika.bsky.social" label="kinlika.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="doremus79.bsky.social" label="doremus79.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="frankiehoward.bsky.social" label="frankiehoward.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="codfather.bsky.social" label="codfather.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="bluebanditjim.bsky.social" label="bluebanditjim.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="leafcrafters.us" label="leafcrafters.us">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="arb2050.bsky.social" label="arb2050.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dreamcatalyst.bsky.social" label="dreamcatalyst.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="fife4europe.bsky.social" label="fife4europe.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dustinhaynes.bsky.social" label="dustinhaynes.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="wethepeoplenv.bsky.social" label="wethepeoplenv.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="paulryanoconnor.bsky.social" label="paulryanoconnor.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="nasu53.bsky.social" label="nasu53.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="him500-43.bsky.social" label="him500-43.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lizloe.bsky.social" label="lizloe.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="kathycerrito.bsky.social" label="kathycerrito.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dollyblaze1.bsky.social" label="dollyblaze1.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="eliskat.bsky.social" label="eliskat.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="casualobserver71.bsky.social" label="casualobserver71.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mark99-9.bsky.social" label="mark99-9.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mrsfarmer.bsky.social" label="mrsfarmer.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rw4e.bsky.social" label="rw4e.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="sfoxoz.bsky.social" label="sfoxoz.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="lovemilan.bsky.social" label="lovemilan.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="marniherreid.bsky.social" label="marniherreid.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="renapich.bsky.social" label="renapich.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="inmaculada.bsky.social" label="inmaculada.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="truth-by-gemini.bsky.social" label="truth-by-gemini.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="dylanhayre.bsky.social" label="dylanhayre.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="mariac725.bsky.social" target="joessy.bsky.social" id="0" />
+      <edge source="mariac725.bsky.social" target="imthinkingsideways.bsky.social" id="1" />
+      <edge source="bluepeachchaser.bsky.social" target="realtuckfrumper.bsky.social" id="2" />
+      <edge source="bluepeachchaser.bsky.social" target="imthinkingsideways.bsky.social" id="3" />
+      <edge source="artistblue.bsky.social" target="peppapaxpippa.bsky.social" id="4" />
+      <edge source="artistblue.bsky.social" target="realtuckfrumper.bsky.social" id="5" />
+      <edge source="frogerta.bsky.social" target="joessy.bsky.social" id="6" />
+      <edge source="frogerta.bsky.social" target="imthinkingsideways.bsky.social" id="7" />
+      <edge source="zanezod.bsky.social" target="joessy.bsky.social" id="8" />
+      <edge source="zanezod.bsky.social" target="peppapaxpippa.bsky.social" id="9" />
+      <edge source="slade68.bsky.social" target="joessy.bsky.social" id="10" />
+      <edge source="slade68.bsky.social" target="tristansnell.bsky.social" id="11" />
+      <edge source="designgirl32.bsky.social" target="joessy.bsky.social" id="12" />
+      <edge source="designgirl32.bsky.social" target="realtuckfrumper.bsky.social" id="13" />
+      <edge source="cronch33bu11.bsky.social" target="realtuckfrumper.bsky.social" id="14" />
+      <edge source="cronch33bu11.bsky.social" target="imthinkingsideways.bsky.social" id="15" />
+      <edge source="peking1199.bsky.social" target="realtuckfrumper.bsky.social" id="16" />
+      <edge source="peking1199.bsky.social" target="tristansnell.bsky.social" id="17" />
+      <edge source="ballybuffet.bsky.social" target="peppapaxpippa.bsky.social" id="18" />
+      <edge source="ballybuffet.bsky.social" target="realtuckfrumper.bsky.social" id="19" />
+      <edge source="jaisonaaclements.bsky.social" target="realtuckfrumper.bsky.social" id="20" />
+      <edge source="jaisonaaclements.bsky.social" target="tristansnell.bsky.social" id="21" />
+      <edge source="rob-booth.bsky.social" target="peppapaxpippa.bsky.social" id="22" />
+      <edge source="rob-booth.bsky.social" target="joessy.bsky.social" id="23" />
+      <edge source="maugie.bsky.social" target="peppapaxpippa.bsky.social" id="24" />
+      <edge source="maugie.bsky.social" target="joessy.bsky.social" id="25" />
+      <edge source="pastordej.bsky.social" target="realtuckfrumper.bsky.social" id="26" />
+      <edge source="pastordej.bsky.social" target="imthinkingsideways.bsky.social" id="27" />
+      <edge source="theliberalhalfof2.bsky.social" target="peppapaxpippa.bsky.social" id="28" />
+      <edge source="theliberalhalfof2.bsky.social" target="tristansnell.bsky.social" id="29" />
+      <edge source="rugger6300.bsky.social" target="realtuckfrumper.bsky.social" id="30" />
+      <edge source="rugger6300.bsky.social" target="tristansnell.bsky.social" id="31" />
+      <edge source="deebot375.bsky.social" target="joessy.bsky.social" id="32" />
+      <edge source="deebot375.bsky.social" target="imthinkingsideways.bsky.social" id="33" />
+      <edge source="michanko.bsky.social" target="joessy.bsky.social" id="34" />
+      <edge source="michanko.bsky.social" target="realtuckfrumper.bsky.social" id="35" />
+      <edge source="dillpunk206.bsky.social" target="realtuckfrumper.bsky.social" id="36" />
+      <edge source="dillpunk206.bsky.social" target="joessy.bsky.social" id="37" />
+      <edge source="alcornews.bsky.social" target="joessy.bsky.social" id="38" />
+      <edge source="alcornews.bsky.social" target="peppapaxpippa.bsky.social" id="39" />
+      <edge source="youniversally.bsky.social" target="peppapaxpippa.bsky.social" id="40" />
+      <edge source="youniversally.bsky.social" target="realtuckfrumper.bsky.social" id="41" />
+      <edge source="jilltsu.bsky.social" target="joessy.bsky.social" id="42" />
+      <edge source="jilltsu.bsky.social" target="tristansnell.bsky.social" id="43" />
+      <edge source="mutebipeter.bsky.social" target="tristansnell.bsky.social" id="44" />
+      <edge source="mutebipeter.bsky.social" target="joessy.bsky.social" id="45" />
+      <edge source="lkmalone729.bsky.social" target="realtuckfrumper.bsky.social" id="46" />
+      <edge source="lkmalone729.bsky.social" target="peppapaxpippa.bsky.social" id="47" />
+      <edge source="arynewstv.bsky.social" target="tristansnell.bsky.social" id="48" />
+      <edge source="arynewstv.bsky.social" target="selinadarrell.bsky.social" id="49" />
+      <edge source="bruceo.bsky.social" target="peppapaxpippa.bsky.social" id="50" />
+      <edge source="bruceo.bsky.social" target="realtuckfrumper.bsky.social" id="51" />
+      <edge source="phoenixfawks.bsky.social" target="realtuckfrumper.bsky.social" id="52" />
+      <edge source="phoenixfawks.bsky.social" target="joessy.bsky.social" id="53" />
+      <edge source="bundles22.bsky.social" target="realtuckfrumper.bsky.social" id="54" />
+      <edge source="bundles22.bsky.social" target="tristansnell.bsky.social" id="55" />
+      <edge source="tuckand.bsky.social" target="peppapaxpippa.bsky.social" id="56" />
+      <edge source="tuckand.bsky.social" target="imthinkingsideways.bsky.social" id="57" />
+      <edge source="didsabdad.bsky.social" target="peppapaxpippa.bsky.social" id="58" />
+      <edge source="didsabdad.bsky.social" target="realtuckfrumper.bsky.social" id="59" />
+      <edge source="anitaw1610.bsky.social" target="peppapaxpippa.bsky.social" id="60" />
+      <edge source="anitaw1610.bsky.social" target="imthinkingsideways.bsky.social" id="61" />
+      <edge source="froggybottompond.bsky.social" target="peppapaxpippa.bsky.social" id="62" />
+      <edge source="froggybottompond.bsky.social" target="realtuckfrumper.bsky.social" id="63" />
+      <edge source="crossword-by.bsky.social" target="joessy.bsky.social" id="64" />
+      <edge source="crossword-by.bsky.social" target="realtuckfrumper.bsky.social" id="65" />
+      <edge source="mari-moxy.bsky.social" target="joessy.bsky.social" id="66" />
+      <edge source="mari-moxy.bsky.social" target="peppapaxpippa.bsky.social" id="67" />
+      <edge source="rattler777.bsky.social" target="peppapaxpippa.bsky.social" id="68" />
+      <edge source="rattler777.bsky.social" target="imthinkingsideways.bsky.social" id="69" />
+      <edge source="alicectsd.bsky.social" target="peppapaxpippa.bsky.social" id="70" />
+      <edge source="alicectsd.bsky.social" target="realtuckfrumper.bsky.social" id="71" />
+      <edge source="davidbarnhouse.bsky.social" target="realtuckfrumper.bsky.social" id="72" />
+      <edge source="davidbarnhouse.bsky.social" target="tristansnell.bsky.social" id="73" />
+      <edge source="catspice.bsky.social" target="joessy.bsky.social" id="74" />
+      <edge source="catspice.bsky.social" target="tristansnell.bsky.social" id="75" />
+      <edge source="catspice.bsky.social" target="peppapaxpippa.bsky.social" id="76" />
+      <edge source="catspice.bsky.social" target="imthinkingsideways.bsky.social" id="77" />
+      <edge source="bonnievivante.bsky.social" target="joessy.bsky.social" id="78" />
+      <edge source="bonnievivante.bsky.social" target="tristansnell.bsky.social" id="79" />
+      <edge source="bonnievivante.bsky.social" target="peppapaxpippa.bsky.social" id="80" />
+      <edge source="thepowertobeheard.bsky.social" target="peppapaxpippa.bsky.social" id="81" />
+      <edge source="thepowertobeheard.bsky.social" target="realtuckfrumper.bsky.social" id="82" />
+      <edge source="debbiewendt.bsky.social" target="peppapaxpippa.bsky.social" id="83" />
+      <edge source="debbiewendt.bsky.social" target="realtuckfrumper.bsky.social" id="84" />
+      <edge source="juj2727.bsky.social" target="tristansnell.bsky.social" id="85" />
+      <edge source="juj2727.bsky.social" target="realtuckfrumper.bsky.social" id="86" />
+      <edge source="bambikat.bsky.social" target="realtuckfrumper.bsky.social" id="87" />
+      <edge source="bambikat.bsky.social" target="joessy.bsky.social" id="88" />
+      <edge source="pedrotravels.bsky.social" target="peppapaxpippa.bsky.social" id="89" />
+      <edge source="pedrotravels.bsky.social" target="imthinkingsideways.bsky.social" id="90" />
+      <edge source="pedrotravels.bsky.social" target="tristansnell.bsky.social" id="91" />
+      <edge source="pedrotravels.bsky.social" target="joessy.bsky.social" id="92" />
+      <edge source="bugstev2.bsky.social" target="peppapaxpippa.bsky.social" id="93" />
+      <edge source="bugstev2.bsky.social" target="joessy.bsky.social" id="94" />
+      <edge source="adopt-dont-shop.bsky.social" target="peppapaxpippa.bsky.social" id="95" />
+      <edge source="adopt-dont-shop.bsky.social" target="tristansnell.bsky.social" id="96" />
+      <edge source="n1osferatu.bsky.social" target="peppapaxpippa.bsky.social" id="97" />
+      <edge source="n1osferatu.bsky.social" target="realtuckfrumper.bsky.social" id="98" />
+      <edge source="ournews.bsky.social" target="tristansnell.bsky.social" id="99" />
+      <edge source="ournews.bsky.social" target="peppapaxpippa.bsky.social" id="100" />
+      <edge source="2fortea.bsky.social" target="peppapaxpippa.bsky.social" id="101" />
+      <edge source="2fortea.bsky.social" target="tristansnell.bsky.social" id="102" />
+      <edge source="beaglegal.bsky.social" target="realtuckfrumper.bsky.social" id="103" />
+      <edge source="beaglegal.bsky.social" target="tristansnell.bsky.social" id="104" />
+      <edge source="remoblockade.bsky.social" target="joessy.bsky.social" id="105" />
+      <edge source="remoblockade.bsky.social" target="tristansnell.bsky.social" id="106" />
+      <edge source="bree40.bsky.social" target="peppapaxpippa.bsky.social" id="107" />
+      <edge source="bree40.bsky.social" target="realtuckfrumper.bsky.social" id="108" />
+      <edge source="bree40.bsky.social" target="tristansnell.bsky.social" id="109" />
+      <edge source="pinkysgirl.bsky.social" target="realtuckfrumper.bsky.social" id="110" />
+      <edge source="pinkysgirl.bsky.social" target="peppapaxpippa.bsky.social" id="111" />
+      <edge source="rajachhatwal.bsky.social" target="realtuckfrumper.bsky.social" id="112" />
+      <edge source="rajachhatwal.bsky.social" target="tristansnell.bsky.social" id="113" />
+      <edge source="trinityrae1978.bsky.social" target="peppapaxpippa.bsky.social" id="114" />
+      <edge source="trinityrae1978.bsky.social" target="realtuckfrumper.bsky.social" id="115" />
+      <edge source="socialt.bsky.social" target="tristansnell.bsky.social" id="116" />
+      <edge source="socialt.bsky.social" target="realtuckfrumper.bsky.social" id="117" />
+      <edge source="mnicewitness.bsky.social" target="imthinkingsideways.bsky.social" id="118" />
+      <edge source="mnicewitness.bsky.social" target="tristansnell.bsky.social" id="119" />
+      <edge source="selinadarrell.bsky.social" target="realtuckfrumper.bsky.social" id="120" />
+      <edge source="selinadarrell.bsky.social" target="classicgame.bsky.social" id="121" />
+      <edge source="sarahmjessica.bsky.social" target="imthinkingsideways.bsky.social" id="122" />
+      <edge source="sarahmjessica.bsky.social" target="joessy.bsky.social" id="123" />
+      <edge source="fathi.bsky.social" target="joessy.bsky.social" id="124" />
+      <edge source="fathi.bsky.social" target="peppapaxpippa.bsky.social" id="125" />
+      <edge source="phredsagirl.bsky.social" target="joessy.bsky.social" id="126" />
+      <edge source="phredsagirl.bsky.social" target="tristansnell.bsky.social" id="127" />
+      <edge source="chelseaklingon.bsky.social" target="peppapaxpippa.bsky.social" id="128" />
+      <edge source="chelseaklingon.bsky.social" target="tristansnell.bsky.social" id="129" />
+      <edge source="tammytam65.bsky.social" target="joessy.bsky.social" id="130" />
+      <edge source="tammytam65.bsky.social" target="peppapaxpippa.bsky.social" id="131" />
+      <edge source="tammytam65.bsky.social" target="tristansnell.bsky.social" id="132" />
+      <edge source="miketfrome.bsky.social" target="joessy.bsky.social" id="133" />
+      <edge source="miketfrome.bsky.social" target="tristansnell.bsky.social" id="134" />
+      <edge source="hollie1976.bsky.social" target="joessy.bsky.social" id="135" />
+      <edge source="hollie1976.bsky.social" target="peppapaxpippa.bsky.social" id="136" />
+      <edge source="chai40.bsky.social" target="tristansnell.bsky.social" id="137" />
+      <edge source="chai40.bsky.social" target="realtuckfrumper.bsky.social" id="138" />
+      <edge source="lau-nagel.bsky.social" target="joessy.bsky.social" id="139" />
+      <edge source="lau-nagel.bsky.social" target="imthinkingsideways.bsky.social" id="140" />
+      <edge source="creneesands.bsky.social" target="peppapaxpippa.bsky.social" id="141" />
+      <edge source="creneesands.bsky.social" target="tristansnell.bsky.social" id="142" />
+      <edge source="bikeman77.bsky.social" target="imthinkingsideways.bsky.social" id="143" />
+      <edge source="bikeman77.bsky.social" target="realtuckfrumper.bsky.social" id="144" />
+      <edge source="harrypothead.bsky.social" target="peppapaxpippa.bsky.social" id="145" />
+      <edge source="harrypothead.bsky.social" target="joessy.bsky.social" id="146" />
+      <edge source="revistatierrabella.cl" target="realtuckfrumper.bsky.social" id="147" />
+      <edge source="revistatierrabella.cl" target="tristansnell.bsky.social" id="148" />
+      <edge source="vanessalongoria.bsky.social" target="joessy.bsky.social" id="149" />
+      <edge source="vanessalongoria.bsky.social" target="realtuckfrumper.bsky.social" id="150" />
+      <edge source="tnriverkeeper.bsky.social" target="joessy.bsky.social" id="151" />
+      <edge source="tnriverkeeper.bsky.social" target="imthinkingsideways.bsky.social" id="152" />
+      <edge source="jewelsbrightart.bsky.social" target="tristansnell.bsky.social" id="153" />
+      <edge source="jewelsbrightart.bsky.social" target="realtuckfrumper.bsky.social" id="154" />
+      <edge source="sergiomerz-spd.bsky.social" target="tristansnell.bsky.social" id="155" />
+      <edge source="sergiomerz-spd.bsky.social" target="realtuckfrumper.bsky.social" id="156" />
+      <edge source="coldsoupforlunch.bsky.social" target="joessy.bsky.social" id="157" />
+      <edge source="coldsoupforlunch.bsky.social" target="peppapaxpippa.bsky.social" id="158" />
+      <edge source="coldsoupforlunch.bsky.social" target="imthinkingsideways.bsky.social" id="159" />
+      <edge source="coldsoupforlunch.bsky.social" target="tristansnell.bsky.social" id="160" />
+      <edge source="beanbait.bsky.social" target="realtuckfrumper.bsky.social" id="161" />
+      <edge source="beanbait.bsky.social" target="tristansnell.bsky.social" id="162" />
+      <edge source="s0me1elses.bsky.social" target="peppapaxpippa.bsky.social" id="163" />
+      <edge source="s0me1elses.bsky.social" target="tristansnell.bsky.social" id="164" />
+      <edge source="lindsay63.bsky.social" target="peppapaxpippa.bsky.social" id="165" />
+      <edge source="lindsay63.bsky.social" target="imthinkingsideways.bsky.social" id="166" />
+      <edge source="peppapaxpippa.bsky.social" target="relevant-demand.bsky.social" id="167" />
+      <edge source="peppapaxpippa.bsky.social" target="mrfjugstad.bsky.social" id="168" />
+      <edge source="peppapaxpippa.bsky.social" target="lewishardy.bsky.social" id="169" />
+      <edge source="peppapaxpippa.bsky.social" target="mykulchadwyk.bsky.social" id="170" />
+      <edge source="peppapaxpippa.bsky.social" target="actouthappy.bsky.social" id="171" />
+      <edge source="peppapaxpippa.bsky.social" target="grant2c.bsky.social" id="172" />
+      <edge source="peppapaxpippa.bsky.social" target="brierfiresmom.bsky.social" id="173" />
+      <edge source="peppapaxpippa.bsky.social" target="dennylama.bsky.social" id="174" />
+      <edge source="peppapaxpippa.bsky.social" target="cancermetaltiger.bsky.social" id="175" />
+      <edge source="peppapaxpippa.bsky.social" target="heyitsbk1.bsky.social" id="176" />
+      <edge source="peppapaxpippa.bsky.social" target="thumbpicker.bsky.social" id="177" />
+      <edge source="peppapaxpippa.bsky.social" target="sandramotley.bsky.social" id="178" />
+      <edge source="peppapaxpippa.bsky.social" target="omega2k.bsky.social" id="179" />
+      <edge source="peppapaxpippa.bsky.social" target="sineadpower.bsky.social" id="180" />
+      <edge source="peppapaxpippa.bsky.social" target="stingmiller.bsky.social" id="181" />
+      <edge source="peppapaxpippa.bsky.social" target="robertocz.bsky.social" id="182" />
+      <edge source="peppapaxpippa.bsky.social" target="homerandherstory.bsky.social" id="183" />
+      <edge source="peppapaxpippa.bsky.social" target="yttod.bsky.social" id="184" />
+      <edge source="peppapaxpippa.bsky.social" target="lifehaspriority.com" id="185" />
+      <edge source="peppapaxpippa.bsky.social" target="ihm69.bsky.social" id="186" />
+      <edge source="peppapaxpippa.bsky.social" target="wildsoundfestival.bsky.social" id="187" />
+      <edge source="peppapaxpippa.bsky.social" target="runawayfromhumans.bsky.social" id="188" />
+      <edge source="peppapaxpippa.bsky.social" target="chspeninsuladems.bsky.social" id="189" />
+      <edge source="peppapaxpippa.bsky.social" target="frankiehoward.bsky.social" id="190" />
+      <edge source="peppapaxpippa.bsky.social" target="codfather.bsky.social" id="191" />
+      <edge source="peppapaxpippa.bsky.social" target="dollyblaze1.bsky.social" id="192" />
+      <edge source="peppapaxpippa.bsky.social" target="eliskat.bsky.social" id="193" />
+      <edge source="peppapaxpippa.bsky.social" target="mrsfarmer.bsky.social" id="194" />
+      <edge source="peppapaxpippa.bsky.social" target="truth-by-gemini.bsky.social" id="195" />
+      <edge source="peppapaxpippa.bsky.social" target="stoneballs.bsky.social" id="196" />
+      <edge source="peppapaxpippa.bsky.social" target="ele369.bsky.social" id="197" />
+      <edge source="peppapaxpippa.bsky.social" target="indivisible-orange.bsky.social" id="198" />
+      <edge source="peppapaxpippa.bsky.social" target="silicagel2112.bsky.social" id="199" />
+      <edge source="peppapaxpippa.bsky.social" target="valoflynn.bsky.social" id="200" />
+      <edge source="peppapaxpippa.bsky.social" target="tee42.bsky.social" id="201" />
+      <edge source="peppapaxpippa.bsky.social" target="lindsaybkk.bsky.social" id="202" />
+      <edge source="peppapaxpippa.bsky.social" target="petsit16.bsky.social" id="203" />
+      <edge source="peppapaxpippa.bsky.social" target="womxnwillwin.bsky.social" id="204" />
+      <edge source="peppapaxpippa.bsky.social" target="mesiahminded107.bsky.social" id="205" />
+      <edge source="peppapaxpippa.bsky.social" target="lettertopalantir.bsky.social" id="206" />
+      <edge source="peppapaxpippa.bsky.social" target="arb2050.bsky.social" id="207" />
+      <edge source="peppapaxpippa.bsky.social" target="casualobserver71.bsky.social" id="208" />
+      <edge source="peppapaxpippa.bsky.social" target="marniherreid.bsky.social" id="209" />
+      <edge source="peppapaxpippa.bsky.social" target="tantishiney.bsky.social" id="210" />
+      <edge source="peppapaxpippa.bsky.social" target="greenlife76.bsky.social" id="211" />
+      <edge source="peppapaxpippa.bsky.social" target="tn-ease.bsky.social" id="212" />
+      <edge source="peppapaxpippa.bsky.social" target="dodiesdob.bsky.social" id="213" />
+      <edge source="peppapaxpippa.bsky.social" target="dennis-1943.bsky.social" id="214" />
+      <edge source="peppapaxpippa.bsky.social" target="spellelizondosilly.bsky.social" id="215" />
+      <edge source="peppapaxpippa.bsky.social" target="transhumanrights.bsky.social" id="216" />
+      <edge source="peppapaxpippa.bsky.social" target="cjparker131.bsky.social" id="217" />
+      <edge source="peppapaxpippa.bsky.social" target="tonyb-29.bsky.social" id="218" />
+      <edge source="peppapaxpippa.bsky.social" target="wisdomrecovery.bsky.social" id="219" />
+      <edge source="peppapaxpippa.bsky.social" target="abigailesman.bsky.social" id="220" />
+      <edge source="peppapaxpippa.bsky.social" target="izzy-2.bsky.social" id="221" />
+      <edge source="peppapaxpippa.bsky.social" target="wildchildlib.bsky.social" id="222" />
+      <edge source="peppapaxpippa.bsky.social" target="fightbackbetter.bsky.social" id="223" />
+      <edge source="peppapaxpippa.bsky.social" target="dreamcatalyst.bsky.social" id="224" />
+      <edge source="peppapaxpippa.bsky.social" target="paulryanoconnor.bsky.social" id="225" />
+      <edge source="peppapaxpippa.bsky.social" target="lovemilan.bsky.social" id="226" />
+      <edge source="peppapaxpippa.bsky.social" target="renapich.bsky.social" id="227" />
+      <edge source="peppapaxpippa.bsky.social" target="fife4europe.bsky.social" id="228" />
+      <edge source="peppapaxpippa.bsky.social" target="elizabeths-sis.bsky.social" id="229" />
+      <edge source="peppapaxpippa.bsky.social" target="blindlemonn.bsky.social" id="230" />
+      <edge source="peppapaxpippa.bsky.social" target="archibaldwolfe.bsky.social" id="231" />
+      <edge source="peppapaxpippa.bsky.social" target="inmaculada.bsky.social" id="232" />
+      <edge source="peppapaxpippa.bsky.social" target="tlfleshmanroy.bsky.social" id="233" />
+      <edge source="peppapaxpippa.bsky.social" target="fractapp.bsky.social" id="234" />
+      <edge source="peppapaxpippa.bsky.social" target="marlowetessmer.bsky.social" id="235" />
+      <edge source="peppapaxpippa.bsky.social" target="rw4e.bsky.social" id="236" />
+      <edge source="peppapaxpippa.bsky.social" target="marines1.bsky.social" id="237" />
+      <edge source="peppapaxpippa.bsky.social" target="anamericanboy.bsky.social" id="238" />
+      <edge source="peppapaxpippa.bsky.social" target="pagirl.bsky.social" id="239" />
+      <edge source="peppapaxpippa.bsky.social" target="freeooo.bsky.social" id="240" />
+      <edge source="peppapaxpippa.bsky.social" target="styx-and-stones3.bsky.social" id="241" />
+      <edge source="peppapaxpippa.bsky.social" target="anno1540.bsky.social" id="242" />
+      <edge source="engclubmalaysia.bsky.social" target="joessy.bsky.social" id="243" />
+      <edge source="engclubmalaysia.bsky.social" target="tristansnell.bsky.social" id="244" />
+      <edge source="george257.bsky.social" target="realtuckfrumper.bsky.social" id="245" />
+      <edge source="george257.bsky.social" target="tristansnell.bsky.social" id="246" />
+      <edge source="relevant-demand.bsky.social" target="tristansnell.bsky.social" id="247" />
+      <edge source="elle4short.bsky.social" target="realtuckfrumper.bsky.social" id="248" />
+      <edge source="elle4short.bsky.social" target="tristansnell.bsky.social" id="249" />
+      <edge source="padoomamethod.bsky.social" target="realtuckfrumper.bsky.social" id="250" />
+      <edge source="padoomamethod.bsky.social" target="imthinkingsideways.bsky.social" id="251" />
+      <edge source="lfinocchi.bsky.social" target="imthinkingsideways.bsky.social" id="252" />
+      <edge source="lfinocchi.bsky.social" target="realtuckfrumper.bsky.social" id="253" />
+      <edge source="mrfjugstad.bsky.social" target="realtuckfrumper.bsky.social" id="254" />
+      <edge source="lewishardy.bsky.social" target="joessy.bsky.social" id="255" />
+      <edge source="justmesara.bsky.social" target="imthinkingsideways.bsky.social" id="256" />
+      <edge source="justmesara.bsky.social" target="joessy.bsky.social" id="257" />
+      <edge source="joanhowarth.bsky.social" target="realtuckfrumper.bsky.social" id="258" />
+      <edge source="joanhowarth.bsky.social" target="tristansnell.bsky.social" id="259" />
+      <edge source="blindlemonn.bsky.social" target="realtuckfrumper.bsky.social" id="260" />
+      <edge source="stormcrow616.bsky.social" target="tristansnell.bsky.social" id="261" />
+      <edge source="stormcrow616.bsky.social" target="realtuckfrumper.bsky.social" id="262" />
+      <edge source="stoneballs.bsky.social" target="joessy.bsky.social" id="263" />
+      <edge source="thecfw.bsky.social" target="imthinkingsideways.bsky.social" id="264" />
+      <edge source="thecfw.bsky.social" target="realtuckfrumper.bsky.social" id="265" />
+      <edge source="clareraynor.bsky.social" target="joessy.bsky.social" id="266" />
+      <edge source="clareraynor.bsky.social" target="tristansnell.bsky.social" id="267" />
+      <edge source="mykulchadwyk.bsky.social" target="realtuckfrumper.bsky.social" id="268" />
+      <edge source="classicgame.bsky.social" target="joessy.bsky.social" id="269" />
+      <edge source="classicgame.bsky.social" target="imthinkingsideways.bsky.social" id="270" />
+      <edge source="tantishiney.bsky.social" target="tristansnell.bsky.social" id="271" />
+      <edge source="archibaldwolfe.bsky.social" target="realtuckfrumper.bsky.social" id="272" />
+      <edge source="actouthappy.bsky.social" target="realtuckfrumper.bsky.social" id="273" />
+      <edge source="peaceandkindness.bsky.social" target="joessy.bsky.social" id="274" />
+      <edge source="peaceandkindness.bsky.social" target="tristansnell.bsky.social" id="275" />
+      <edge source="marlowetessmer.bsky.social" target="joessy.bsky.social" id="276" />
+      <edge source="cutthebsfa.bsky.social" target="joessy.bsky.social" id="277" />
+      <edge source="cutthebsfa.bsky.social" target="imthinkingsideways.bsky.social" id="278" />
+      <edge source="grant2c.bsky.social" target="joessy.bsky.social" id="279" />
+      <edge source="davidandgoliath.bsky.social" target="joessy.bsky.social" id="280" />
+      <edge source="davidandgoliath.bsky.social" target="imthinkingsideways.bsky.social" id="281" />
+      <edge source="ele369.bsky.social" target="realtuckfrumper.bsky.social" id="282" />
+      <edge source="marines1.bsky.social" target="realtuckfrumper.bsky.social" id="283" />
+      <edge source="brierfiresmom.bsky.social" target="joessy.bsky.social" id="284" />
+      <edge source="brierfiresmom.bsky.social" target="tristansnell.bsky.social" id="285" />
+      <edge source="dennylama.bsky.social" target="joessy.bsky.social" id="286" />
+      <edge source="greenlife76.bsky.social" target="realtuckfrumper.bsky.social" id="287" />
+      <edge source="cancermetaltiger.bsky.social" target="realtuckfrumper.bsky.social" id="288" />
+      <edge source="indivisible-orange.bsky.social" target="tristansnell.bsky.social" id="289" />
+      <edge source="heyitsbk1.bsky.social" target="realtuckfrumper.bsky.social" id="290" />
+      <edge source="kimmorgenstern.bsky.social" target="joessy.bsky.social" id="291" />
+      <edge source="kimmorgenstern.bsky.social" target="realtuckfrumper.bsky.social" id="292" />
+      <edge source="thumbpicker.bsky.social" target="realtuckfrumper.bsky.social" id="293" />
+      <edge source="brcunningham.bsky.social" target="tristansnell.bsky.social" id="294" />
+      <edge source="brcunningham.bsky.social" target="joessy.bsky.social" id="295" />
+      <edge source="tkbecker.bsky.social" target="joessy.bsky.social" id="296" />
+      <edge source="tkbecker.bsky.social" target="imthinkingsideways.bsky.social" id="297" />
+      <edge source="wiseguy482.bsky.social" target="imthinkingsideways.bsky.social" id="298" />
+      <edge source="wiseguy482.bsky.social" target="tristansnell.bsky.social" id="299" />
+      <edge source="narvysilva.bsky.social" target="realtuckfrumper.bsky.social" id="300" />
+      <edge source="narvysilva.bsky.social" target="tristansnell.bsky.social" id="301" />
+      <edge source="here2learn2.bsky.social" target="realtuckfrumper.bsky.social" id="302" />
+      <edge source="here2learn2.bsky.social" target="tristansnell.bsky.social" id="303" />
+      <edge source="hpatrishark.bsky.social" target="imthinkingsideways.bsky.social" id="304" />
+      <edge source="hpatrishark.bsky.social" target="tristansnell.bsky.social" id="305" />
+      <edge source="cdkilbride322.bsky.social" target="realtuckfrumper.bsky.social" id="306" />
+      <edge source="cdkilbride322.bsky.social" target="tristansnell.bsky.social" id="307" />
+      <edge source="swilsonwrites.bsky.social" target="joessy.bsky.social" id="308" />
+      <edge source="swilsonwrites.bsky.social" target="tristansnell.bsky.social" id="309" />
+      <edge source="silicagel2112.bsky.social" target="realtuckfrumper.bsky.social" id="310" />
+      <edge source="silicagel2112.bsky.social" target="imthinkingsideways.bsky.social" id="311" />
+      <edge source="sandramotley.bsky.social" target="tristansnell.bsky.social" id="312" />
+      <edge source="bluestilettos.bsky.social" target="realtuckfrumper.bsky.social" id="313" />
+      <edge source="bluestilettos.bsky.social" target="tristansnell.bsky.social" id="314" />
+      <edge source="anamericanboy.bsky.social" target="realtuckfrumper.bsky.social" id="315" />
+      <edge source="anamericanboy.bsky.social" target="imthinkingsideways.bsky.social" id="316" />
+      <edge source="jennylynne.bsky.social" target="realtuckfrumper.bsky.social" id="317" />
+      <edge source="jennylynne.bsky.social" target="tristansnell.bsky.social" id="318" />
+      <edge source="fractapp.bsky.social" target="tristansnell.bsky.social" id="319" />
+      <edge source="freeooo.bsky.social" target="joessy.bsky.social" id="320" />
+      <edge source="freeooo.bsky.social" target="tristansnell.bsky.social" id="321" />
+      <edge source="tn-ease.bsky.social" target="imthinkingsideways.bsky.social" id="322" />
+      <edge source="omega2k.bsky.social" target="imthinkingsideways.bsky.social" id="323" />
+      <edge source="fieldtogrovewi.bsky.social" target="joessy.bsky.social" id="324" />
+      <edge source="fieldtogrovewi.bsky.social" target="imthinkingsideways.bsky.social" id="325" />
+      <edge source="joseamezam.bsky.social" target="realtuckfrumper.bsky.social" id="326" />
+      <edge source="joseamezam.bsky.social" target="tristansnell.bsky.social" id="327" />
+      <edge source="gypsywillowheart55.bsky.social" target="joessy.bsky.social" id="328" />
+      <edge source="gypsywillowheart55.bsky.social" target="tristansnell.bsky.social" id="329" />
+      <edge source="firstnationaltranq.bsky.social" target="realtuckfrumper.bsky.social" id="330" />
+      <edge source="firstnationaltranq.bsky.social" target="tristansnell.bsky.social" id="331" />
+      <edge source="dodiesdob.bsky.social" target="tristansnell.bsky.social" id="332" />
+      <edge source="goodgriefeditorial.bsky.social" target="joessy.bsky.social" id="333" />
+      <edge source="goodgriefeditorial.bsky.social" target="tristansnell.bsky.social" id="334" />
+      <edge source="valoflynn.bsky.social" target="realtuckfrumper.bsky.social" id="335" />
+      <edge source="monsatano.bsky.social" target="imthinkingsideways.bsky.social" id="336" />
+      <edge source="monsatano.bsky.social" target="realtuckfrumper.bsky.social" id="337" />
+      <edge source="sineadpower.bsky.social" target="realtuckfrumper.bsky.social" id="338" />
+      <edge source="taxstrikenv.bsky.social" target="joessy.bsky.social" id="339" />
+      <edge source="taxstrikenv.bsky.social" target="tristansnell.bsky.social" id="340" />
+      <edge source="dennis-1943.bsky.social" target="realtuckfrumper.bsky.social" id="341" />
+      <edge source="nixadon.bsky.social" target="realtuckfrumper.bsky.social" id="342" />
+      <edge source="nixadon.bsky.social" target="imthinkingsideways.bsky.social" id="343" />
+      <edge source="pmh58.bsky.social" target="realtuckfrumper.bsky.social" id="344" />
+      <edge source="pmh58.bsky.social" target="tristansnell.bsky.social" id="345" />
+      <edge source="stingmiller.bsky.social" target="realtuckfrumper.bsky.social" id="346" />
+      <edge source="botkillerzero1.bsky.social" target="realtuckfrumper.bsky.social" id="347" />
+      <edge source="botkillerzero1.bsky.social" target="tristansnell.bsky.social" id="348" />
+      <edge source="robertocz.bsky.social" target="imthinkingsideways.bsky.social" id="349" />
+      <edge source="styx-and-stones3.bsky.social" target="joessy.bsky.social" id="350" />
+      <edge source="remainresolute.bsky.social" target="tristansnell.bsky.social" id="351" />
+      <edge source="remainresolute.bsky.social" target="realtuckfrumper.bsky.social" id="352" />
+      <edge source="tee42.bsky.social" target="tristansnell.bsky.social" id="353" />
+      <edge source="dirkfitch.bsky.social" target="realtuckfrumper.bsky.social" id="354" />
+      <edge source="dirkfitch.bsky.social" target="imthinkingsideways.bsky.social" id="355" />
+      <edge source="allexf931.bsky.social" target="tristansnell.bsky.social" id="356" />
+      <edge source="allexf931.bsky.social" target="joessy.bsky.social" id="357" />
+      <edge source="pagirl.bsky.social" target="realtuckfrumper.bsky.social" id="358" />
+      <edge source="imthinkingsideways.bsky.social" target="homerandherstory.bsky.social" id="359" />
+      <edge source="imthinkingsideways.bsky.social" target="sweetwilliamsfarm.bsky.social" id="360" />
+      <edge source="imthinkingsideways.bsky.social" target="pompisheart.bsky.social" id="361" />
+      <edge source="imthinkingsideways.bsky.social" target="him500-43.bsky.social" id="362" />
+      <edge source="imthinkingsideways.bsky.social" target="truth-by-gemini.bsky.social" id="363" />
+      <edge source="imthinkingsideways.bsky.social" target="lindsaybkk.bsky.social" id="364" />
+      <edge source="imthinkingsideways.bsky.social" target="gemma71.bsky.social" id="365" />
+      <edge source="imthinkingsideways.bsky.social" target="speechwriterguy.bsky.social" id="366" />
+      <edge source="imthinkingsideways.bsky.social" target="womxnwillwin.bsky.social" id="367" />
+      <edge source="imthinkingsideways.bsky.social" target="kathycerrito.bsky.social" id="368" />
+      <edge source="imthinkingsideways.bsky.social" target="cjparker131.bsky.social" id="369" />
+      <edge source="imthinkingsideways.bsky.social" target="maromicha.bsky.social" id="370" />
+      <edge source="imthinkingsideways.bsky.social" target="wisdomrecovery.bsky.social" id="371" />
+      <edge source="imthinkingsideways.bsky.social" target="jerr83.bsky.social" id="372" />
+      <edge source="imthinkingsideways.bsky.social" target="dogs-should-rule.bsky.social" id="373" />
+      <edge source="imthinkingsideways.bsky.social" target="lizloe.bsky.social" id="374" />
+      <edge source="imthinkingsideways.bsky.social" target="renapich.bsky.social" id="375" />
+      <edge source="imthinkingsideways.bsky.social" target="rw4e.bsky.social" id="376" />
+      <edge source="imthinkingsideways.bsky.social" target="sfoxoz.bsky.social" id="377" />
+      <edge source="imthinkingsideways.bsky.social" target="whatshappenin.bsky.social" id="378" />
+      <edge source="imthinkingsideways.bsky.social" target="kevalkumar.bsky.social" id="379" />
+      <edge source="imthinkingsideways.bsky.social" target="deepsshetty.bsky.social" id="380" />
+      <edge source="imthinkingsideways.bsky.social" target="xtrabittermelon.bsky.social" id="381" />
+      <edge source="tristiantateem.bsky.social" target="joessy.bsky.social" id="382" />
+      <edge source="tristiantateem.bsky.social" target="tristansnell.bsky.social" id="383" />
+      <edge source="ramonapalin.bsky.social" target="joessy.bsky.social" id="384" />
+      <edge source="ramonapalin.bsky.social" target="tristansnell.bsky.social" id="385" />
+      <edge source="fminseattle.bsky.social" target="joessy.bsky.social" id="386" />
+      <edge source="fminseattle.bsky.social" target="tristansnell.bsky.social" id="387" />
+      <edge source="spellelizondosilly.bsky.social" target="tristansnell.bsky.social" id="388" />
+      <edge source="tristansnell.bsky.social" target="yttod.bsky.social" id="389" />
+      <edge source="tristansnell.bsky.social" target="cblessings.bsky.social" id="390" />
+      <edge source="tristansnell.bsky.social" target="selimsgnidart.bsky.social" id="391" />
+      <edge source="tristansnell.bsky.social" target="lifehaspriority.com" id="392" />
+      <edge source="tristansnell.bsky.social" target="ihm69.bsky.social" id="393" />
+      <edge source="tristansnell.bsky.social" target="changeresearch.com" id="394" />
+      <edge source="tristansnell.bsky.social" target="pensive-tm.bsky.social" id="395" />
+      <edge source="tristansnell.bsky.social" target="runawayfromhumans.bsky.social" id="396" />
+      <edge source="tristansnell.bsky.social" target="therareearth.bsky.social" id="397" />
+      <edge source="tristansnell.bsky.social" target="chspeninsuladems.bsky.social" id="398" />
+      <edge source="tristansnell.bsky.social" target="crunks65.bsky.social" id="399" />
+      <edge source="tristansnell.bsky.social" target="rneagle.bsky.social" id="400" />
+      <edge source="tristansnell.bsky.social" target="analytics699.bsky.social" id="401" />
+      <edge source="tristansnell.bsky.social" target="speechwriterguy.bsky.social" id="402" />
+      <edge source="tristansnell.bsky.social" target="tdpowers.bsky.social" id="403" />
+      <edge source="tristansnell.bsky.social" target="lettertopalantir.bsky.social" id="404" />
+      <edge source="tristansnell.bsky.social" target="kinlika.bsky.social" id="405" />
+      <edge source="tristansnell.bsky.social" target="bluebanditjim.bsky.social" id="406" />
+      <edge source="tristansnell.bsky.social" target="dustinhaynes.bsky.social" id="407" />
+      <edge source="tristansnell.bsky.social" target="wethepeoplenv.bsky.social" id="408" />
+      <edge source="tristansnell.bsky.social" target="kathycerrito.bsky.social" id="409" />
+      <edge source="tristansnell.bsky.social" target="nectaronice.bsky.social" id="410" />
+      <edge source="tristansnell.bsky.social" target="musbah96.bsky.social" id="411" />
+      <edge source="tristansnell.bsky.social" target="mark99-9.bsky.social" id="412" />
+      <edge source="tristansnell.bsky.social" target="sfoxoz.bsky.social" id="413" />
+      <edge source="tristansnell.bsky.social" target="maromicha.bsky.social" id="414" />
+      <edge source="tristansnell.bsky.social" target="fightbackbetter.bsky.social" id="415" />
+      <edge source="tristansnell.bsky.social" target="edm-healthcare.bsky.social" id="416" />
+      <edge source="tristansnell.bsky.social" target="paulryanoconnor.bsky.social" id="417" />
+      <edge source="tristansnell.bsky.social" target="lizloe.bsky.social" id="418" />
+      <edge source="tristansnell.bsky.social" target="izzy-2.bsky.social" id="419" />
+      <edge source="tristansnell.bsky.social" target="transhumanrights.bsky.social" id="420" />
+      <edge source="tristansnell.bsky.social" target="abigailesman.bsky.social" id="421" />
+      <edge source="tristansnell.bsky.social" target="doremus79.bsky.social" id="422" />
+      <edge source="tristansnell.bsky.social" target="dylanhayre.bsky.social" id="423" />
+      <edge source="tristansnell.bsky.social" target="wildchildlib.bsky.social" id="424" />
+      <edge source="tristansnell.bsky.social" target="kevalkumar.bsky.social" id="425" />
+      <edge source="tristansnell.bsky.social" target="xtrabittermelon.bsky.social" id="426" />
+      <edge source="tristansnell.bsky.social" target="turkintelguy.bsky.social" id="427" />
+      <edge source="tristansnell.bsky.social" target="dogs-should-rule.bsky.social" id="428" />
+      <edge source="whatshappenin.bsky.social" target="realtuckfrumper.bsky.social" id="429" />
+      <edge source="cblessings.bsky.social" target="joessy.bsky.social" id="430" />
+      <edge source="turkintelguy.bsky.social" target="joessy.bsky.social" id="431" />
+      <edge source="selimsgnidart.bsky.social" target="joessy.bsky.social" id="432" />
+      <edge source="cjparker131.bsky.social" target="realtuckfrumper.bsky.social" id="433" />
+      <edge source="crunks65.bsky.social" target="joessy.bsky.social" id="434" />
+      <edge source="sweetwilliamsfarm.bsky.social" target="realtuckfrumper.bsky.social" id="435" />
+      <edge source="anno1540.bsky.social" target="joessy.bsky.social" id="436" />
+      <edge source="rneagle.bsky.social" target="joessy.bsky.social" id="437" />
+      <edge source="joessy.bsky.social" target="wildsoundfestival.bsky.social" id="438" />
+      <edge source="joessy.bsky.social" target="therareearth.bsky.social" id="439" />
+      <edge source="joessy.bsky.social" target="jomarie05.bsky.social" id="440" />
+      <edge source="joessy.bsky.social" target="frankiehoward.bsky.social" id="441" />
+      <edge source="joessy.bsky.social" target="codfather.bsky.social" id="442" />
+      <edge source="joessy.bsky.social" target="dollyblaze1.bsky.social" id="443" />
+      <edge source="joessy.bsky.social" target="tdpowers.bsky.social" id="444" />
+      <edge source="joessy.bsky.social" target="musbah96.bsky.social" id="445" />
+      <edge source="joessy.bsky.social" target="fife4europe.bsky.social" id="446" />
+      <edge source="joessy.bsky.social" target="marniherreid.bsky.social" id="447" />
+      <edge source="joessy.bsky.social" target="tlfleshmanroy.bsky.social" id="448" />
+      <edge source="joessy.bsky.social" target="leafcrafters.us" id="449" />
+      <edge source="joessy.bsky.social" target="renapich.bsky.social" id="450" />
+      <edge source="joessy.bsky.social" target="kevalkumar.bsky.social" id="451" />
+      <edge source="joessy.bsky.social" target="shopysquares.com" id="452" />
+      <edge source="joessy.bsky.social" target="wisdomrecovery.bsky.social" id="453" />
+      <edge source="joessy.bsky.social" target="lovemilan.bsky.social" id="454" />
+      <edge source="joessy.bsky.social" target="analytics699.bsky.social" id="455" />
+      <edge source="joessy.bsky.social" target="kinlika.bsky.social" id="456" />
+      <edge source="joessy.bsky.social" target="doremus79.bsky.social" id="457" />
+      <edge source="joessy.bsky.social" target="anwarmjfheel.bsky.social" id="458" />
+      <edge source="joessy.bsky.social" target="nasu53.bsky.social" id="459" />
+      <edge source="joessy.bsky.social" target="deepsshetty.bsky.social" id="460" />
+      <edge source="petsit16.bsky.social" target="realtuckfrumper.bsky.social" id="461" />
+      <edge source="edm-healthcare.bsky.social" target="realtuckfrumper.bsky.social" id="462" />
+      <edge source="lifehaspriority.com" target="realtuckfrumper.bsky.social" id="463" />
+      <edge source="gemma71.bsky.social" target="realtuckfrumper.bsky.social" id="464" />
+      <edge source="pompisheart.bsky.social" target="realtuckfrumper.bsky.social" id="465" />
+      <edge source="kevalkumar.bsky.social" target="realtuckfrumper.bsky.social" id="466" />
+      <edge source="tonyb-29.bsky.social" target="realtuckfrumper.bsky.social" id="467" />
+      <edge source="jerr83.bsky.social" target="realtuckfrumper.bsky.social" id="468" />
+      <edge source="elizabeths-sis.bsky.social" target="realtuckfrumper.bsky.social" id="469" />
+      <edge source="changeresearch.com" target="realtuckfrumper.bsky.social" id="470" />
+      <edge source="mesiahminded107.bsky.social" target="realtuckfrumper.bsky.social" id="471" />
+      <edge source="pensive-tm.bsky.social" target="realtuckfrumper.bsky.social" id="472" />
+      <edge source="runawayfromhumans.bsky.social" target="realtuckfrumper.bsky.social" id="473" />
+      <edge source="realtuckfrumper.bsky.social" target="chspeninsuladems.bsky.social" id="474" />
+      <edge source="realtuckfrumper.bsky.social" target="jomarie05.bsky.social" id="475" />
+      <edge source="realtuckfrumper.bsky.social" target="him500-43.bsky.social" id="476" />
+      <edge source="realtuckfrumper.bsky.social" target="eliskat.bsky.social" id="477" />
+      <edge source="realtuckfrumper.bsky.social" target="mrsfarmer.bsky.social" id="478" />
+      <edge source="realtuckfrumper.bsky.social" target="bluebanditjim.bsky.social" id="479" />
+      <edge source="realtuckfrumper.bsky.social" target="leafcrafters.us" id="480" />
+      <edge source="realtuckfrumper.bsky.social" target="arb2050.bsky.social" id="481" />
+      <edge source="realtuckfrumper.bsky.social" target="dustinhaynes.bsky.social" id="482" />
+      <edge source="realtuckfrumper.bsky.social" target="wethepeoplenv.bsky.social" id="483" />
+      <edge source="realtuckfrumper.bsky.social" target="nasu53.bsky.social" id="484" />
+      <edge source="realtuckfrumper.bsky.social" target="casualobserver71.bsky.social" id="485" />
+      <edge source="realtuckfrumper.bsky.social" target="nectaronice.bsky.social" id="486" />
+      <edge source="realtuckfrumper.bsky.social" target="dreamcatalyst.bsky.social" id="487" />
+      <edge source="realtuckfrumper.bsky.social" target="mark99-9.bsky.social" id="488" />
+      <edge source="realtuckfrumper.bsky.social" target="shopysquares.com" id="489" />
+      <edge source="realtuckfrumper.bsky.social" target="inmaculada.bsky.social" id="490" />
+      <edge source="realtuckfrumper.bsky.social" target="dylanhayre.bsky.social" id="491" />
+      <edge source="realtuckfrumper.bsky.social" target="anwarmjfheel.bsky.social" id="492" />
+    </edges>
+  </graph>
+</gexf>

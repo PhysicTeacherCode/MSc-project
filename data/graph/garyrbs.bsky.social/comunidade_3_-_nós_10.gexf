@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8'?>
+<gexf xmlns="http://www.gexf.net/1.2draft" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gexf.net/1.2draft http://www.gexf.net/1.2draft/gexf.xsd" version="1.2">
+  <meta lastmodifieddate="2026-02-15">
+    <creator>NetworkX 3.5</creator>
+  </meta>
+  <graph defaultedgetype="undirected" mode="static" name="">
+    <attributes mode="static" class="node">
+      <attribute id="0" title="level" type="long" />
+    </attributes>
+    <nodes>
+      <node id="jamespo84.bsky.social" label="jamespo84.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="ashleymarcus.bsky.social" label="ashleymarcus.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="micheals06.bsky.social" label="micheals06.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="magicdaddy.bsky.social" label="magicdaddy.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="mickgantry.bsky.social" label="mickgantry.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="weatherman-1616.bsky.social" label="weatherman-1616.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="rakibul-hasan.bsky.social" label="rakibul-hasan.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="terrblet.bsky.social" label="terrblet.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="democrat20.bsky.social" label="democrat20.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+      <node id="blueeyes5131949.bsky.social" label="blueeyes5131949.bsky.social">
+        <attvalues>
+          <attvalue for="0" value="2" />
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="jamespo84.bsky.social" target="ashleymarcus.bsky.social" id="0" />
+      <edge source="jamespo84.bsky.social" target="micheals06.bsky.social" id="1" />
+      <edge source="ashleymarcus.bsky.social" target="terrblet.bsky.social" id="2" />
+      <edge source="ashleymarcus.bsky.social" target="mickgantry.bsky.social" id="3" />
+      <edge source="ashleymarcus.bsky.social" target="weatherman-1616.bsky.social" id="4" />
+      <edge source="ashleymarcus.bsky.social" target="democrat20.bsky.social" id="5" />
+      <edge source="ashleymarcus.bsky.social" target="blueeyes5131949.bsky.social" id="6" />
+      <edge source="ashleymarcus.bsky.social" target="rakibul-hasan.bsky.social" id="7" />
+      <edge source="ashleymarcus.bsky.social" target="magicdaddy.bsky.social" id="8" />
+      <edge source="ashleymarcus.bsky.social" target="micheals06.bsky.social" id="9" />
+      <edge source="micheals06.bsky.social" target="terrblet.bsky.social" id="10" />
+      <edge source="micheals06.bsky.social" target="mickgantry.bsky.social" id="11" />
+      <edge source="micheals06.bsky.social" target="weatherman-1616.bsky.social" id="12" />
+      <edge source="micheals06.bsky.social" target="democrat20.bsky.social" id="13" />
+      <edge source="micheals06.bsky.social" target="blueeyes5131949.bsky.social" id="14" />
+      <edge source="micheals06.bsky.social" target="rakibul-hasan.bsky.social" id="15" />
+      <edge source="micheals06.bsky.social" target="magicdaddy.bsky.social" id="16" />
+    </edges>
+  </graph>
+</gexf>
