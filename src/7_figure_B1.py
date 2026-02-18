@@ -2,17 +2,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-df = pd.read_csv('../data/posts/aussieopinion.bsky.social_(641)/words_data/aussieopinion_palavras_desvio.csv')
+df = pd.read_csv('../data/posts/freebirdthirteen.bsky.social_(1047)/words_data/freebirdthirteen.bsky.social_palavras_desvio.csv')
 
 print(df.head())
 
 # Calcular densidade com histograma
-counts, bin_edges = np.histogram(df['desvio_padrao'], bins=500, density=True)
+counts, bin_edges = np.histogram(df['desvio_padrao'], bins=2000, density=True)
 bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
 # Gráfico
 plt.figure(figsize=(8, 6))
 plt.scatter(bin_centers, counts, s=10, color='black')
+plt.ylim(1e-5, 1e0)
+plt.xlim(1e-1, 1e4)
 plt.xscale('log')
 plt.yscale('log')
 plt.xlabel('Standard Deviation in Time')

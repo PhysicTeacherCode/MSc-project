@@ -40,11 +40,11 @@ GROUP BY palavras
 ORDER BY count DESC;
 
 -- Idade de cada palavra
-CREATE TABLE "lexicodex.bsky.social_palavras_desvio" AS (
+CREATE TABLE "freebirdthirteen.bsky.social_palavras_desvio" AS (
 WITH palavras_idade AS (
     SELECT unnest(string_to_array(regexp_replace(lower("post"), '[^[:alpha:]]', ' ', 'g'), ' ')) AS palavras,
            DATE("date") - DATE('2023-01-01') AS idade
-    FROM "lexicodex.bsky.social_posts"
+    FROM "freebirdthirteen.bsky.social_posts"
 ),
 com_minimo AS (
     SELECT palavras,
