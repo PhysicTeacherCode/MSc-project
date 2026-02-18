@@ -1,103 +1,107 @@
-# Replicating *The Statistical Mechanics of Twitter Communities* Using the Bluesky Social Network
+﻿# Replicating *The Statistical Mechanics of Twitter Communities* Using the Bluesky Social Network
+![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-000?style=for-the-badge&logo=postgresql)
+![Matplotlib](https://img.shields.io/badge/Matplotlib-%23ffffff.svg?style=for-the-badge&logo=Matplotlib&logoColor=black)
+![Seaborn](https://img.shields.io/badge/Seaborn-4CB391?style=for-the-badge&logo=Seaborn&logoColor=white)
+![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)
+![NetworkX](https://img.shields.io/badge/NetworkX-000?style=for-the-badge&logo=python&logoColor=white)
 
-This repository is an attempt to reproduce — and adapt — the results of the article:
-
+Este repositório é uma tentativa de reproduzir — e adaptar — os resultados do artigo:
 > **Gavin Hall and William Bialek (2019)** — *The Statistical Mechanics of Twitter Communities*
 > DOI: **10.1088/1742-5468/ab3af0**
-
-The main goal is to investigate whether the same statistical properties observed in Twitter communities also emerge in the **Bluesky** social network.
-
-This is the [link](https://drive.google.com/drive/folders/1w2yRyMeoPIUw0AFl0sN3HXia6j4HNqm-?usp=sharing) for data collected so far.
-
+O objetivo principal é investigar se as mesmas propriedades estatísticas observadas em comunidades do Twitter também emergem na rede social **Bluesky**.
+Link para os [dados coletados até o momento](https://drive.google.com/drive/folders/1w2yRyMeoPIUw0AFl0sN3HXia6j4HNqm-?usp=sharing).
 ---
-
-## 📌 Motivation
-
-The original paper uses statistical mechanics tools to analyze user interactions, uncovering patterns such as:
-
-* Community formation
-* Correlations between users
-* Network structure
-* Distribution of influence and connectivity
-
-With the rise of Bluesky and its open API, this project explores whether similar phenomena arise on a more decentralized platform — or if new behavioral dynamics emerge.
-
+## 📌 Motivação
+O artigo original utiliza ferramentas de mecânica estatística para analisar interações entre usuários, descobrindo padrões como:
+* Formação de comunidades
+* Correlações entre usuários
+* Estrutura de rede
+* Distribuição de influência e conectividade
+Com o crescimento do Bluesky e sua API aberta, este projeto explora se fenômenos similares emergem em uma plataforma mais descentralizada — ou se novas dinâmicas comportamentais surgem.
 ---
-
-## 🎯 Project Objectives
-
-* Collect public Bluesky interaction data.
-* Build network graphs (followers, posts and interactions).
-* Apply methods inspired by the paper, such as:
-
-  * Pairwise correlation matrices
-  * The Maximun Entropy models for social interactions
-* Investigate how structural differences between Twitter and Bluesky communities affect the statistical outcomes.
-
+## 🎯 Objetivos do Projeto
+* Coletar dados públicos de interação do Bluesky.
+* Construir grafos de rede (seguidores, posts e interações).
+* Aplicar métodos inspirados no artigo, tais como:
+  * Matrizes de correlação entre pares de usuários
+  * Modelos de Máxima Entropia para interações sociais
+* Investigar como diferenças estruturais entre comunidades do Twitter e Bluesky afetam os resultados estatísticos.
 ---
-
-## 🛠️ Tools & Technologies
-
-* **Python 3.x**
-* **Bluesky API**
-* Main libraries:
-
-  * `pandas`
-  * `matplotlib` / `seaborn`
-  * `requests`
-  * `time`
-  * `concurrent.futures` (for time optmization)
-* Jupyter Notebooks for analysis workflows.
-
+## 🛠️ Tecnologias Utilizadas
+* **Linguagem:** Python 3.x
+* **API:** Bluesky API
+* **Principais bibliotecas:**
+  * `pandas` — Manipulação e análise de dados
+  * `matplotlib` / `seaborn` — Visualização de dados
+  * `networkx` — Análise de redes e grafos
+  * `requests` — Requisições HTTP
+  * `asyncio` — Processamento assíncrono
+* **Banco de Dados:** PostgreSQL
+* **Ambiente:** Jupyter Notebooks para workflows de análise.
 ---
-
-## 📊 Data
-
-Data is collected directly from the public Bluesky API.
-Depending on Bluesky’s data policies, *raw data may not be included* and may instead be reconstructed via provided scripts.
-
+## 📊 Dados
+Os dados são coletados diretamente da API pública do Bluesky. Dependendo das políticas de dados do Bluesky, *dados brutos podem não ser incluídos* e podem ser reconstruídos via scripts fornecidos.
 ---
-
-## 📁 Repository Structure
-
+## 📁 Estrutura do Repositório
 ```
-In progress
+MSc-project/
+├── README.md                                          # Documentação principal
+├── data/
+│   ├── graph/                                        # Arquivos de rede (GEXF, PNG)
+│   │   ├── aussieopinion.bsky.social/
+│   │   ├── freebirdthirteen.bsky.social/
+│   │   ├── garyrbs.bsky.social/
+│   │   ├── jelle8591.bsky.social/
+│   │   ├── lexicodex.bsky.social/
+│   │   ├── msevelyn.bsky.social/
+│   │   └── randall.gobirds.online/
+│   └── posts/                                        # Dados de posts coletados
+│       └── lexicodex.bsky.social_(55)/
+└── src/
+    ├── 1_core_users_followers.py                     # Coleta de usuários core e followers
+    ├── 2_get_posts_from_gexf.py                      # Extração de posts via API
+    ├── 3_gexf_to_png.py                              # Conversão de grafos para visualização
+    ├── 4_posts_to_database.py                        # Armazenamento em banco de dados
+    ├── 5_database_analysis.sql                       # Análises SQL
+    ├── 6_database_to_df.py                           # Extração de dados para análise
+    └── 7_figure_B1.py                                # Geração de figuras
 ```
-
 ---
-
-## 📚 Main Reference
-
+## 📚 Conteúdo dos Scripts
+A análise está dividida em sete etapas principais:
+1. **Coleta de Usuários Core (`1_core_users_followers.py`)**: Extrai usuários principais e seus seguidores.
+2. **Coleta de Posts (`2_get_posts_from_gexf.py`)**: Obtém posts via API Bluesky usando dados dos grafos.
+3. **Visualização de Redes (`3_gexf_to_png.py`)**: Converte arquivos GEXF em imagens PNG com temas claros/escuros.
+4. **Armazenamento em BD (`4_posts_to_database.py`)**: Salva posts em banco de dados PostgreSQL.
+5. **Análises SQL (`5_database_analysis.sql`)**: Queries para análise estatística dos dados.
+6. **Extração para DataFrame (`6_database_to_df.py`)**: Exporta dados do BD para análise em Python.
+7. **Geração de Figuras (`7_figure_B1.py`)**: Cria visualizações e comparações estatísticas.
+---
+## 📊 Resultados Principais
+*Análises em progresso. Resultados serão adicionados conforme as etapas forem concluídas.*
+---
+## 🚧 Status do Projeto
+> **Em progresso.**
+> Coleta de dados, construção de grafos e análises iniciais estão em andamento.
+---
+## 🤝 Contribuindo
+Contribuições são bem-vindas! Sugestões, melhorias, métodos alternativos ou discussões sobre o artigo original são especialmente encorajadas.
+---
+## 👤 Autor
+**Diego de Lima Fernandes**
+- LinkedIn: [linkedin.com/in/diegulus](https://www.linkedin.com/in/diegulus/)
+- GitHub: [@PhysicTeacherCode](https://github.com/PhysicTeacherCode)
+- Email: diego196095@gmail.com
+---
+## 📄 License
+*Em progresso*
+---
+## 📚 Referência Principal
 Gavin Hall and William Bialek. (2019).
 **The statistical mechanics of Twitter communities**.
 *Journal of Statistical Mechanics: Theory and Experiment*.
 DOI: 10.1088/1742-5468/ab3af0
-
 ---
-
-## 🚧 Project Status
-
-> **In progress.**
-> Data collection, graph construction, and initial analyses are ongoing.
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome!
-Suggestions, improvements, alternative methods, or discussions about the original paper are especially encouraged.
-
----
-
-## 📄 License
-
-```
-In progress
-```
-
----
-
-## ✨ Final Note
-
-This project aims to bridge statistical physics and data science applied to modern decentralized social networks.
-If you're interested in complex networks, statistical mechanics, or social platforms like Bluesky, this repository may be useful to you.
+## ✨ Nota Final
+Este projeto visa conectar física estatística e ciência de dados aplicadas a redes sociais descentralizadas modernas. Se você está interessado em redes complexas, mecânica estatística ou plataformas sociais como Bluesky, este repositório pode ser útil para você.
