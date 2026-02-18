@@ -156,11 +156,14 @@ def processar_todos():
 
     escolha = input("\nEscolha (1/2/3): ").strip()
 
-    gexf_dir = Path(f'../data/graph/{handle_bsky}')
+    gexf_dir = Path(f'../data/graph/{handle_bsky}/GEXF')
+    png_dir = Path(f'../data/graph/{handle_bsky}/PNG')
 
     if not gexf_dir.exists():
         print(f"❌ Diretório não encontrado: {gexf_dir}")
         return
+
+    png_dir.mkdir(parents=True, exist_ok=True)
 
     gexf_files = list(gexf_dir.rglob('*[0-9].gexf'))
 
@@ -175,14 +178,14 @@ def processar_todos():
         print(f"\n[{i}/{len(gexf_files)}] Processando: {gexf_file.name}")
 
         if escolha == '1':
-            output_file = str(gexf_file).replace('.gexf', '.png')
+            output_file = str(png_dir / gexf_file.stem) + '.png'
             gexf_to_png_light(str(gexf_file), output_file)
         elif escolha == '2':
-            output_file = str(gexf_file).replace('.gexf', '.png')
+            output_file = str(png_dir / gexf_file.stem) + '.png'
             gexf_to_png_dark(str(gexf_file), output_file)
         else:
-            output_light = str(gexf_file).replace('.gexf', '.png')
-            output_dark = str(gexf_file).replace('.gexf', '_dark.png')
+            output_light = str(png_dir / gexf_file.stem) + '.png'
+            output_dark = str(png_dir / gexf_file.stem) + '_dark.png'
             gexf_to_png_light(str(gexf_file), output_light)
             gexf_to_png_dark(str(gexf_file), output_dark)
 

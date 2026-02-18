@@ -128,7 +128,7 @@ async def main():
 
     G = nx.k_core(G,2)
 
-    nx.write_gexf(G, f"../data/graph/{handle_bsky}/{handle_bsky}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf")
+    nx.write_gexf(G, f"../data/graph/{handle_bsky}/GEXF/{handle_bsky}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf")
 
     print("Criando comunidades com algoritmo louvain...")
 
@@ -139,7 +139,7 @@ async def main():
         subgraph = G.subgraph(comm).copy()
         subgraph = nx.k_core(subgraph,2)
         if subgraph.number_of_nodes() != 0:
-            nx.write_gexf(subgraph, f"../data/graph/{handle_bsky}/comunidade_{idx + 1}_-_nós_{subgraph.number_of_nodes()}.gexf")
+            nx.write_gexf(subgraph, f"../data/graph/{handle_bsky}/GEXF/comunidade_{idx + 1}_-_nós_{subgraph.number_of_nodes()}.gexf")
 
 
 asyncio.run(main())

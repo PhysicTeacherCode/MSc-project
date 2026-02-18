@@ -7,7 +7,7 @@ df = pd.read_csv('../data/posts/lexicodex.bsky.social_(55)/words_data/lexicodex_
 print(df.head())
 
 # Calcular densidade com histograma
-counts, bin_edges = np.histogram(df['desvio_padrao'], bins=1500, density=True)
+counts, bin_edges = np.histogram(df['desvio_padrao'], bins=1000, density=True)
 bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
 # Gráfico
