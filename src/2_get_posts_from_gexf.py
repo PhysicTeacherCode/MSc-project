@@ -4,7 +4,6 @@ import aiohttp
 import networkx as nx
 import os
 import re
-import unicodedata
 from pathlib import Path
 
 def clean_text(text):
@@ -105,7 +104,7 @@ async def get_posts(session, actor):
 
 async def main():
     print("digite o caminho do arquivo GEXF e pressione Enter: ")
-    gexf_path = input("exemplo -> ../data/graph/*.bsky.social/*.gexf ")
+    gexf_path = input("exemplo -> ../data/graph/*.bsky.social/GEXF/*.gexf ")
 
     followers_list = load_followers_list(gexf_path)
 
@@ -124,7 +123,7 @@ async def main():
 
     # Extrai o nome do diretório entre 'graph/' e '/'
     gexf_path_obj = Path(gexf_path)
-    community_name = gexf_path_obj.parent.name
+    community_name = gexf_path_obj.parent.parent.name
     output_dir = f"../data/posts/{community_name}_({total_users})/"
 
     connector = aiohttp.TCPConnector(limit=100, limit_per_host=10, ssl=False)

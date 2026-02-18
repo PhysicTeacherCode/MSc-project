@@ -2,12 +2,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-df = pd.read_csv('../data/posts/lexicodex.bsky.social_(55)/words_data/lexicodex_palavras_desvio.csv')
+df = pd.read_csv('../data/posts/aussieopinion.bsky.social_(641)/words_data/aussieopinion_palavras_desvio.csv')
 
 print(df.head())
 
 # Calcular densidade com histograma
-counts, bin_edges = np.histogram(df['desvio_padrao'], bins=1000, density=True)
+counts, bin_edges = np.histogram(df['desvio_padrao'], bins=500, density=True)
 bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
 
 # Gráfico

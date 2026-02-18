@@ -4,6 +4,81 @@ from aiohttp import ClientSession, TCPConnector
 import networkx as nx
 import os
 
+async def get_user_posts_count(session: ClientSession, actor_handle: str):
+    """
+    Busca os posts de um usuário e conta quantos são originais (não repost)
+    """
+    url = "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed"
+    cursor = None
+    posts_count = 0
+
+    while True:
+        params = {"actor": actor_handle, "limit": 100}
+        if cursor:
+            params["cursor"] = cursor
+
+        try:
+            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status != 200:
+                    break
+                data = await resp.json()
+
+        except Exception:
+            break
+
+        feed = data.get("feed", [])
+        for item in feed:
+            record = item.get("post", {}).get("record", {})
+            if record and not record.get("reply") and "$type" in record:
+                if record["$type"] == "app.bsky.feed.post":
+                    posts_count += 1
+
+        cursor = data.get("cursor")
+        if not cursor:
+            break
+
+    return actor_handle, posts_count
+
+
+async def fetch_posts_count_batch(session: ClientSession, user_batch):
+    """
+    Busca contagem de posts de um batch de usuários usando a mesma sessão
+    """
+    tasks = [get_user_posts_count(session, u) for u in user_batch]
+    return await asyncio.gather(*tasks, return_exceptions=True)
+
+
+async def filter_users_by_post_count(user_list, min_posts=2, batch_size=100, per_host_limit=50):
+    """
+    Filtra usuários que têm pelo menos min_posts posts originais (sem repost)
+    """
+    connector = TCPConnector(
+        limit_per_host=per_host_limit,
+        limit=200,
+        ttl_dns_cache=300
+    )
+
+    timeout = aiohttp.ClientTimeout(total=30, connect=10)
+
+    valid_users = []
+
+    async with ClientSession(connector=connector, timeout=timeout) as session:
+        for i in range(0, len(user_list), batch_size):
+            batch = user_list[i:i + batch_size]
+            batch_results = await fetch_posts_count_batch(session, batch)
+
+            for result in batch_results:
+                if not isinstance(result, Exception):
+                    user, post_count = result
+                    if post_count >= min_posts:
+                        valid_users.append(user)
+
+            if i + batch_size < len(user_list):
+                await asyncio.sleep(0.3)
+
+    return valid_users
+
+
 async def get_followers(session: ClientSession, actor_handle: str, limit=1000):
     """
     Busca todos os seguidores de um usuário através da API do Bluesky
@@ -112,7 +187,16 @@ async def main():
     print("Coletando seguidores de 2ª ordem...")
     second_dict, second_list = await build_order(first_list, "da 1ª ordem")
 
-    os.makedirs(f"../data/graph/{handle_bsky}", exist_ok=True)
+    print("Filtrando usuários por contagem de posts (mínimo 2 posts)...")
+    all_users = set(first_list + second_list + [handle_bsky])
+    valid_users = await filter_users_by_post_count(list(all_users), min_posts=2)
+    valid_users_set = set(valid_users)
+
+    print(f"Total de usuários: {len(all_users)}")
+    print(f"Usuários com pelo menos 2 posts: {len(valid_users_set)}")
+
+    os.makedirs(f"../data/graph/{handle_bsky}/GEXF", exist_ok=True)
+    os.makedirs(f"../data/graph/{handle_bsky}/PNG", exist_ok=True)
 
     print("Criando grafo...")
     G = nx.DiGraph()
@@ -126,7 +210,10 @@ async def main():
 
     G.remove_edges_from(nx.selfloop_edges(G))
 
-    G = nx.k_core(G,2)
+    nodes_to_remove = [node for node in G.nodes() if node not in valid_users_set]
+    G.remove_nodes_from(nodes_to_remove)
+
+    G = nx.k_core(G, 2)
 
     nx.write_gexf(G, f"../data/graph/{handle_bsky}/GEXF/{handle_bsky}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf")
 
@@ -137,7 +224,7 @@ async def main():
     print("Salvando subcomunidades...")
     for idx, comm in enumerate(communities):
         subgraph = G.subgraph(comm).copy()
-        subgraph = nx.k_core(subgraph,2)
+        subgraph = nx.k_core(subgraph, 2)
         if subgraph.number_of_nodes() != 0:
             nx.write_gexf(subgraph, f"../data/graph/{handle_bsky}/GEXF/comunidade_{idx + 1}_-_nós_{subgraph.number_of_nodes()}.gexf")
 
