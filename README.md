@@ -9,8 +9,9 @@
 Este repositório é uma tentativa de reproduzir — e adaptar — os resultados do artigo:
 > **Gavin Hall and William Bialek (2019)** — *The Statistical Mechanics of Twitter Communities*
 > DOI: **10.1088/1742-5468/ab3af0**
+
 O objetivo principal é investigar se as mesmas propriedades estatísticas observadas em comunidades do Twitter também emergem na rede social **Bluesky**.
-Link para os [dados coletados até o momento](https://drive.google.com/drive/folders/1w2yRyMeoPIUw0AFl0sN3HXia6j4HNqm-?usp=sharing).
+
 ---
 ## 📌 Motivação
 O artigo original utiliza ferramentas de mecânica estatística para analisar interações entre usuários, descobrindo padrões como:
