@@ -6,7 +6,12 @@ import os
 
 async def get_user_posts_count(session: ClientSession, actor_handle: str):
     """
-    Busca os posts de um usuário e conta quantos são originais (não repost)
+    Busca e conta posts originais de um usuario, excluindo replies e reposts.
+
+    [Ordem de acoes]:
+    1. Pagina o feed do autor com cursor e timeout.
+    2. Filtra registros validos e soma posts originais.
+    3. Retorna o handle com a contagem total.
     """
     url = "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed"
     cursor = None
@@ -42,7 +47,11 @@ async def get_user_posts_count(session: ClientSession, actor_handle: str):
 
 async def fetch_posts_count_batch(session: ClientSession, user_batch):
     """
-    Busca contagem de posts de um batch de usuários usando a mesma sessão
+    Executa a contagem de posts para um lote de usuarios em paralelo.
+
+    [Ordem de acoes]:
+    1. Monta tarefas de contagem por usuario.
+    2. Aguarda todas as tarefas e retorna os resultados.
     """
     tasks = [get_user_posts_count(session, u) for u in user_batch]
     return await asyncio.gather(*tasks, return_exceptions=True)
@@ -50,7 +59,12 @@ async def fetch_posts_count_batch(session: ClientSession, user_batch):
 
 async def filter_users_by_post_count(user_list, min_posts=2, batch_size=100, per_host_limit=50):
     """
-    Filtra usuários que têm pelo menos min_posts posts originais (sem repost)
+    Filtra usuarios com pelo menos um numero minimo de posts originais.
+
+    [Ordem de acoes]:
+    1. Cria sessao HTTP com limites e timeout.
+    2. Processa usuarios em lotes e coleta contagens.
+    3. Retorna somente usuarios com contagem suficiente.
     """
     connector = TCPConnector(
         limit_per_host=per_host_limit,
@@ -81,7 +95,12 @@ async def filter_users_by_post_count(user_list, min_posts=2, batch_size=100, per
 
 async def get_followers(session: ClientSession, actor_handle: str, limit=1000):
     """
-    Busca todos os seguidores de um usuário através da API do Bluesky
+    Coleta seguidores de um usuario via API do Bluesky.
+
+    [Ordem de acoes]:
+    1. Pagina seguidores usando cursor.
+    2. Filtra handles invalidos e acumula resultados.
+    3. Retorna o handle com a lista de seguidores.
     """
     url = "https://public.api.bsky.app/xrpc/app.bsky.graph.getFollowers"
     cursor = None
@@ -116,7 +135,11 @@ async def get_followers(session: ClientSession, actor_handle: str, limit=1000):
 
 async def fetch_followers_batch(session: ClientSession, user_batch):
     """
-    Busca seguidores de um batch de usuários usando a mesma sessão
+    Busca seguidores de um lote de usuarios em paralelo.
+
+    [Ordem de acoes]:
+    1. Cria tarefas por usuario para buscar seguidores.
+    2. Aguarda todas as tarefas e retorna os resultados.
     """
     tasks = [get_followers(session, u) for u in user_batch]
     return await asyncio.gather(*tasks, return_exceptions=True)
@@ -124,7 +147,12 @@ async def fetch_followers_batch(session: ClientSession, user_batch):
 
 async def fetch_followers_list(user_list, batch_size=100, per_host_limit=50):
     """
-    Busca seguidores de uma lista de usuários em batches para otimizar performance
+    Busca seguidores de uma lista em lotes para otimizar desempenho.
+
+    [Ordem de acoes]:
+    1. Configura sessao HTTP com limites e timeout.
+    2. Processa lotes, agregando resultados validos.
+    3. Retorna um dicionario usuario -> seguidores.
     """
     connector = TCPConnector(
         limit_per_host=per_host_limit,
@@ -153,7 +181,12 @@ async def fetch_followers_list(user_list, batch_size=100, per_host_limit=50):
 
 async def build_order(previous_users, order_label):
     """
-    Constrói um nível de seguidores (1ª, 2ª ou 3ª ordem)
+    Constroi um nivel de seguidores e a lista achatada.
+
+    [Ordem de acoes]:
+    1. Busca seguidores para o conjunto de entrada.
+    2. Achata os seguidores em uma lista unica.
+    3. Retorna o dicionario e a lista.
     """
     results_dict = await fetch_followers_list(previous_users, batch_size=100)
     flattened = list({f for flw_list in results_dict.values() for f in flw_list})
@@ -162,7 +195,12 @@ async def build_order(previous_users, order_label):
 
 def add_edges_from_dict(G, data_dict, level):
     """
-    Adiciona arestas e atributos de nível ao grafo de forma otimizada
+    Adiciona arestas ao grafo e define o nivel dos nos.
+
+    [Ordem de acoes]:
+    1. Monta todas as arestas a partir do dicionario.
+    2. Adiciona arestas ao grafo.
+    3. Marca o nivel dos nos seguidores.
     """
     edges = []
     for actor, followers in data_dict.items():
@@ -175,9 +213,51 @@ def add_edges_from_dict(G, data_dict, level):
             if f in G.nodes:
                 G.nodes[f]["level"] = level
 
+def get_next_core_user_dir(base_dir):
+    """
+    Escolhe a proxima pasta anonima disponivel para o core user.
+
+    [Ordem de acoes]:
+    1. Garante que o diretorio base exista.
+    2. Incrementa o indice ate encontrar uma pasta livre.
+    3. Retorna o caminho completo e o rotulo da pasta.
+    """
+    os.makedirs(base_dir, exist_ok=True)
+    idx = 1
+    while True:
+        label = f"core_user_{idx}"
+        candidate = os.path.join(base_dir, label)
+        if not os.path.exists(candidate):
+            return candidate, label
+        idx += 1
+
+
+def append_core_user_list(data_dir, handle_bsky, follower_count, core_user_label):
+    """
+    Registra o core user em um arquivo de lista persistente.
+
+    [Ordem de acoes]:
+    1. Garante o diretorio de dados e o arquivo.
+    2. Escreve o cabecalho se for a primeira execucao.
+    3. Adiciona uma linha com handle, seguidores e pasta.
+    """
+    os.makedirs(data_dir, exist_ok=True)
+    output_path = os.path.join(data_dir, "core_users_list.txt")
+    is_new = not os.path.exists(output_path)
+    with open(output_path, "a", encoding="utf-8") as file:
+        if is_new:
+            file.write("handle,followers,folder\n")
+        file.write(f"{handle_bsky},{follower_count},{core_user_label}\n")
+
+
 async def main():
     """
-    Pipeline principal: busca seguidores, constrói grafo e detecta comunidades
+    Executa o pipeline completo: coleta seguidores, filtra usuarios e gera grafos.
+
+    [Ordem de acoes]:
+    1. Coleta seguidores de 1a e 2a ordem e filtra por posts.
+    2. Cria pastas anonimas e registra o core user.
+    3. Monta o grafo, aplica filtros e salva GEXF.
     """
     handle_bsky = input("Digite o handle do usuário: ")
 
@@ -195,8 +275,17 @@ async def main():
     print(f"Total de usuários: {len(all_users)}")
     print(f"Usuários com pelo menos 2 posts: {len(valid_users_set)}")
 
-    os.makedirs(f"../data/graph/{handle_bsky}/GEXF", exist_ok=True)
-    os.makedirs(f"../data/graph/{handle_bsky}/PNG", exist_ok=True)
+    base_graph_dir = os.path.join("..", "data", "graph")
+    core_user_dir, core_user_label = get_next_core_user_dir(base_graph_dir)
+    gexf_dir = os.path.join(core_user_dir, "GEXF")
+    png_dir = os.path.join(core_user_dir, "PNG")
+
+    os.makedirs(gexf_dir, exist_ok=True)
+    os.makedirs(png_dir, exist_ok=True)
+
+    followers_list = first_dict.get(handle_bsky, [])
+    followers_count = len(set(followers_list))
+    append_core_user_list(os.path.join("..", "data"), handle_bsky, followers_count, core_user_label)
 
     print("Criando grafo...")
     G = nx.DiGraph()
@@ -215,7 +304,7 @@ async def main():
 
     G = nx.k_core(G, 2)
 
-    nx.write_gexf(G, f"../data/graph/{handle_bsky}/GEXF/{handle_bsky}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf")
+    nx.write_gexf(G, os.path.join(gexf_dir, f"{core_user_label}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf"))
 
     print("Criando comunidades com algoritmo louvain...")
 
@@ -226,7 +315,7 @@ async def main():
         subgraph = G.subgraph(comm).copy()
         subgraph = nx.k_core(subgraph, 2)
         if subgraph.number_of_nodes() != 0:
-            nx.write_gexf(subgraph, f"../data/graph/{handle_bsky}/GEXF/comunidade_{idx + 1}_-_nós_{subgraph.number_of_nodes()}.gexf")
+            nx.write_gexf(subgraph, os.path.join(gexf_dir, f"comunidade_{idx + 1}_-_nós_{subgraph.number_of_nodes()}.gexf"))
 
 
 asyncio.run(main())
