@@ -4,9 +4,54 @@ from pathlib import Path
 import numpy as np
 
 
+def list_core_user_folders(base_dir):
+    """
+    Lista pastas core_user_N existentes dentro do diretorio base.
+
+    [Ordem de acoes]:
+    1. Verifica se o diretorio base existe.
+    2. Filtra subpastas iniciadas por core_user_.
+    3. Retorna a lista ordenada.
+    """
+    base_path = Path(base_dir)
+    if not base_path.exists():
+        return []
+    folders = [p for p in base_path.iterdir() if p.is_dir() and p.name.startswith("core_user_")]
+    return sorted(folders, key=lambda p: p.name)
+
+
+def choose_from_list(items, prompt):
+    """
+    Solicita ao usuario escolher um item da lista pelo indice.
+
+    [Ordem de acoes]:
+    1. Exibe os itens numerados.
+    2. Le e valida a escolha do usuario.
+    3. Retorna o item selecionado.
+    """
+    if not items:
+        return None
+
+    for idx, item in enumerate(items, start=1):
+        print(f"{idx}. {item}")
+
+    while True:
+        choice = input(prompt).strip()
+        if choice.isdigit():
+            num = int(choice)
+            if 1 <= num <= len(items):
+                return items[num - 1]
+        print("Escolha invalida. Tente novamente.")
+
+
 def gexf_to_png_dark(gexf_file, output_file=None):
     """
-    Converte arquivo GEXF para PNG com tema escuro (melhor contraste)
+    Converte arquivo GEXF em PNG com tema escuro.
+
+    [Ordem de acoes]:
+    1. Carrega o grafo GEXF e valida conteudo.
+    2. Calcula layout e desenha nos/arestas.
+    3. Salva a figura em PNG.
     """
     if output_file is None:
         output_file = gexf_file.replace('.gexf', '.png')
@@ -81,12 +126,27 @@ def gexf_to_png_dark(gexf_file, output_file=None):
 
 def processar_todos():
     """
-    Processa todos os arquivos GEXF encontrados (apenas tema escuro)
-    """
-    handle_bsky = input("Digite o handle do usuário: ")
+    Processa todos os GEXF do core_user escolhido e gera PNGs.
 
-    gexf_dir = Path(f'../data/graph/{handle_bsky}/GEXF')
-    png_dir = Path(f'../data/graph/{handle_bsky}/PNG')
+    [Ordem de acoes]:
+    1. Lista e seleciona a pasta core_user.
+    2. Localiza arquivos GEXF e cria pasta PNG.
+    3. Converte cada GEXF para PNG.
+    """
+    print("Escolha a pasta do core user:")
+
+    core_user_folders = list_core_user_folders(Path("..") / "data" / "graph")
+    if not core_user_folders:
+        print("❌ Nenhuma pasta core_user encontrada em ../data/graph")
+        return
+
+    selected_core_folder = choose_from_list(core_user_folders, "Digite o numero da pasta desejada: ")
+    if not selected_core_folder:
+        print("❌ Nenhuma pasta selecionada.")
+        return
+
+    gexf_dir = Path(selected_core_folder) / "GEXF"
+    png_dir = Path(selected_core_folder) / "PNG"
 
     if not gexf_dir.exists():
         print(f"❌ Diretório não encontrado: {gexf_dir}")
