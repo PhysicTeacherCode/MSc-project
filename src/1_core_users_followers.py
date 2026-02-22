@@ -267,13 +267,9 @@ async def main():
     print("Coletando seguidores de 2ª ordem...")
     second_dict, second_list = await build_order(first_list, "da 1ª ordem")
 
-    print("Filtrando usuários por contagem de posts (mínimo 2 posts)...")
     all_users = set(first_list + second_list + [handle_bsky])
-    valid_users = await filter_users_by_post_count(list(all_users), min_posts=2)
-    valid_users_set = set(valid_users)
 
     print(f"Total de usuários: {len(all_users)}")
-    print(f"Usuários com pelo menos 2 posts: {len(valid_users_set)}")
 
     base_graph_dir = os.path.join("..", "data", "graph")
     core_user_dir, core_user_label = get_next_core_user_dir(base_graph_dir)
@@ -299,8 +295,6 @@ async def main():
 
     G.remove_edges_from(nx.selfloop_edges(G))
 
-    nodes_to_remove = [node for node in G.nodes() if node not in valid_users_set]
-    G.remove_nodes_from(nodes_to_remove)
 
     G = nx.k_core(G, 2)
 
