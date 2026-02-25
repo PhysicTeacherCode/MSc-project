@@ -242,7 +242,8 @@ async def main():
 
     gexf_path_obj = Path(gexf_path)
     community_name = gexf_path_obj.parent.parent.name
-    output_dir = f"/MSc-project/data/posts/{community_name}_({total_users})/raw_data/"
+    output_dir = Path("MSc-project") / "data" / "posts" / f"{community_name}_({total_users})" / "raw_data"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     connector = aiohttp.TCPConnector(limit=50, limit_per_host=20, ssl=False, ttl_dns_cache=300)
     timeout = aiohttp.ClientTimeout(total=60, connect=10)
@@ -272,7 +273,7 @@ async def main():
                     "date": dates
                 })
                 os.makedirs(output_dir, exist_ok=True)
-                df.to_csv(f"{output_dir}{actor}({len(texts)}).csv", index=False, encoding='utf-8', quoting=1, quotechar='"')
+                df.to_csv(output_dir / f"{actor}({len(texts)}).csv", index=False, encoding='utf-8', quoting=1, quotechar='"')
                 saved_count += 1
 
                 if saved_count % 10 == 0:
