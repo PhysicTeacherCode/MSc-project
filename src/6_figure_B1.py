@@ -4,11 +4,11 @@ import numpy as np
 from pathlib import Path
 
 # Encontrar todos os arquivos *palavras_desvio.csv
-base_dir = Path("..") / "data" / "posts"
+base_dir = Path("MSc-project") / "data" / "posts"
 palavras_files = list(base_dir.glob("core_user*/*palavras_desvio.csv"))
 
 if not palavras_files:
-    raise SystemExit("Nenhum arquivo *palavras_desvio.csv encontrado em ../data/posts")
+    raise SystemExit("Nenhum arquivo *palavras_desvio.csv encontrado em MSc-project/data/posts")
 
 # Exibir opções
 print("Arquivos encontrados:")

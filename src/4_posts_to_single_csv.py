@@ -43,10 +43,10 @@ def choose_from_list(items, prompt):
         print("Escolha invalida. Tente novamente.")
 
 
-base_posts_dir = Path("../data/posts")
+base_posts_dir = Path("MSc-project/data/posts")
 core_user_folders = list_core_user_folders(base_posts_dir)
 if not core_user_folders:
-    raise SystemExit("Nenhuma pasta core_user encontrada em ../data/posts")
+    raise SystemExit("Nenhuma pasta core_user encontrada em MSc-project/data/posts")
 
 print("Escolha a pasta do core user:")
 selected_core_folder = choose_from_list(core_user_folders, "Digite o numero da pasta desejada: ")
@@ -64,7 +64,7 @@ print("Criando banco de dados (pandas) de posts...")
 dfs = [pd.read_csv(csv_file) for csv_file in csv_files]
 df_posts = pd.concat(dfs, ignore_index=True) if dfs else pd.DataFrame()
 
-output_dir = Path(f"../data/posts/{core_user}/")
+output_dir = Path(f"MSc-project/data/posts/{core_user}/")
 output_dir.mkdir(parents=True, exist_ok=True)
 output_path = output_dir / f"{core_user}_posts_merged.csv"
 

@@ -135,9 +135,9 @@ def processar_todos():
     """
     print("Escolha a pasta do core user:")
 
-    core_user_folders = list_core_user_folders(Path("..") / "data" / "graph")
+    core_user_folders = list_core_user_folders(Path("MSc-project") / "data" / "graph")
     if not core_user_folders:
-        print("❌ Nenhuma pasta core_user encontrada em ../data/graph")
+        print("❌ Nenhuma pasta core_user encontrada em MSc-project/data/graph")
         return
 
     selected_core_folder = choose_from_list(core_user_folders, "Digite o numero da pasta desejada: ")

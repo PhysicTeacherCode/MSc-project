@@ -201,9 +201,9 @@ async def main():
     """
     print("Escolha a pasta do core user:")
 
-    core_user_folders = list_core_user_folders(Path("..") / "data" / "graph")
+    core_user_folders = list_core_user_folders(Path("MSc-project") / "data" / "graph")
     if not core_user_folders:
-        print("Nenhuma pasta core_user encontrada em ../data/graph")
+        print("Nenhuma pasta core_user encontrada em MSc-project/data/graph")
         return
 
     selected_core_folder = choose_from_list(core_user_folders, "Digite o numero da pasta desejada: ")
@@ -242,7 +242,7 @@ async def main():
 
     gexf_path_obj = Path(gexf_path)
     community_name = gexf_path_obj.parent.parent.name
-    output_dir = f"../data/posts/{community_name}_({total_users})/raw_data/"
+    output_dir = f"/MSc-project/data/posts/{community_name}_({total_users})/raw_data/"
 
     connector = aiohttp.TCPConnector(limit=50, limit_per_host=20, ssl=False, ttl_dns_cache=300)
     timeout = aiohttp.ClientTimeout(total=60, connect=10)

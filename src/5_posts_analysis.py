@@ -11,11 +11,11 @@ Ordem de ações:
 4. Salva resultado em CSV com palavras, quantidade de ocorrências e desvio padrão
 """
 
-base_posts_dir = Path("..") / "data" / "posts"
+base_posts_dir = Path("MSc-project") / "data" / "posts"
 merged_files = list(base_posts_dir.glob("core_user*/*_posts_merged.csv"))
 
 if not merged_files:
-    raise SystemExit("Nenhum arquivo *_posts_merged.csv encontrado em ../data/posts")
+    raise SystemExit("Nenhum arquivo *_posts_merged.csv encontrado em MSc-project/data/posts")
 
 print("Arquivos encontrados:")
 for idx, file in enumerate(merged_files, start=1):

@@ -271,7 +271,7 @@ async def main():
 
     print(f"Total de usuários: {len(all_users)}")
 
-    base_graph_dir = os.path.join("..", "data", "graph")
+    base_graph_dir = os.path.join("MSc-project", "data", "graph")
     core_user_dir, core_user_label = get_next_core_user_dir(base_graph_dir)
     gexf_dir = os.path.join(core_user_dir, "GEXF")
     png_dir = os.path.join(core_user_dir, "PNG")
@@ -281,7 +281,7 @@ async def main():
 
     followers_list = first_dict.get(handle_bsky, [])
     followers_count = len(set(followers_list))
-    append_core_user_list(os.path.join("..", "data"), handle_bsky, followers_count, core_user_label)
+    append_core_user_list(os.path.join("MSc-project", "data"), handle_bsky, followers_count, core_user_label)
 
     print("Criando grafo...")
     G = nx.DiGraph()
@@ -300,9 +300,9 @@ async def main():
 
     nx.write_gexf(G, os.path.join(gexf_dir, f"{core_user_label}_-_nós_{G.number_of_nodes()}(comunidade_inteira).gexf"))
 
-    print("Criando comunidades com algoritmo louvain...")
+    print("Criando comunidades com algoritmo Clauset-Newman-Moore (greedy modularity maximization)...")
 
-    communities = list(nx.algorithms.community.louvain_communities(G, seed=42))
+    communities = list(nx.algorithms.community.greedy_modularity_communities(G))
 
     print("Salvando subcomunidades...")
     for idx, comm in enumerate(communities):
