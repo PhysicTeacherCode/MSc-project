@@ -242,7 +242,7 @@ async def main():
 
     gexf_path_obj = Path(gexf_path)
     community_name = gexf_path_obj.parent.parent.name
-    output_dir = f"../data/posts/{community_name}_({total_users})/"
+    output_dir = f"../data/posts/{community_name}_({total_users})/raw_data/"
 
     connector = aiohttp.TCPConnector(limit=50, limit_per_host=20, ssl=False, ttl_dns_cache=300)
     timeout = aiohttp.ClientTimeout(total=60, connect=10)
