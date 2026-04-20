@@ -1,0 +1,1 @@
+[{"did:plc:123": ["word1", "word2"], "did:plc:456": ["word3"]}, ["did:plc:123", "did:plc:456", "did:plc:789"]]
