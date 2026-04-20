@@ -1,5 +1,4 @@
 import asyncio
-import pandas as pd
 import networkx as nx
 import os
 import aiohttp
