@@ -119,7 +119,7 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
     global_word_times = {} # {word_str: array.array('d')}
     user_word_sets = {}    # {did_interned: {word_str_interned}}
     
-    connector = aiohttp.TCPConnector(ssl=False, ttl_dns_cache=300)
+    connector = aiohttp.TCPConnector(ttl_dns_cache=300)
     async with aiohttp.ClientSession(connector=connector) as session:
         semaphore = asyncio.Semaphore(semaphore_limit)
         
