@@ -102,7 +102,7 @@ async def fetch_followers(session, actor, semaphore, max_retries=5, limit_total=
                         try:
                             error_data = await resp.json()
                             err_msg = error_data.get("message", "Handle Inválido")
-                        except:
+                        except Exception:
                             err_msg = "Handle Inválido"
                         print(f"\n[Aviso] Falha ao coletar '{actor}': {err_msg}")
                         return followers
@@ -168,6 +168,45 @@ async def fetch_following(session, actor: str, semaphore, max_pages: int = 5) ->
     return following
 
 
+
+async def check_relationships_parallel(session, actor: str, known_dids: list, handle_by_did: dict, semaphore) -> list:
+    url = f"https://{BSKY_SERVICE}/xrpc/app.bsky.graph.getRelationships"
+    found = []
+
+    # Chunk known_dids into batches of 30
+    chunks = [known_dids[i:i+30] for i in range(0, len(known_dids), 30)]
+
+    async def fetch_chunk(chunk):
+        params = [("actor", actor)] + [("others", d) for d in chunk]
+        retries = 0
+        while retries < 3:
+            try:
+                async with semaphore:
+                    async with session.get(url, params=params) as resp:
+                        if resp.status == 429:
+                            await asyncio.sleep(2)
+                            retries += 1
+                            continue
+                        if resp.status == 200:
+                            data = await resp.json()
+                            res = []
+                            for rel in data.get("relationships", []):
+                                if rel.get("following") and rel.get("did") in handle_by_did:
+                                    res.append(handle_by_did[rel["did"]])
+                            return res
+                        return []
+            except Exception:
+                retries += 1
+                await asyncio.sleep(1)
+        return []
+
+    results = await asyncio.gather(*[fetch_chunk(c) for c in chunks], return_exceptions=True)
+    for r in results:
+        if isinstance(r, list):
+            found.extend(r)
+    return found
+
+
 async def enrich_edges_with_cross_connections(
     session,
     second_order_nodes: list,
@@ -185,14 +224,51 @@ async def enrich_edges_with_cross_connections(
 
     print(f"\n[3ª Passagem] Cross-connections: {total} usuários em lotes de {chunk_size}...")
 
+    # Optimize if API supports parallel lookups
+    # getRelationships takes up to 30 handles.
+    # 5 pages of getFollows = 500 handles = 5 requests.
+    # If len(known_nodes) / 30 <= 5, getRelationships makes fewer/equal requests and allows parallel fetching!
+    reqs_rel = len(known_nodes) / 30
+    reqs_follows = 5  # max_pages
+
+    use_parallel_relationships = reqs_rel <= reqs_follows
+
+    known_dids = []
+    handle_by_did = {}
+
+    if use_parallel_relationships:
+        print("  [Otimização] Usando getRelationships (buscas paralelas) em vez de paginação sequencial...")
+        known_handles = list(known_nodes)
+
+        async def resolve_batch(batch):
+            params = [("actors", h) for h in batch]
+            try:
+                async with semaphore:
+                    async with session.get(f"https://{BSKY_SERVICE}/xrpc/app.bsky.actor.getProfiles", params=params) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            for p in data.get("profiles", []):
+                                handle_by_did[p["did"]] = p["handle"]
+                                known_dids.append(p["did"])
+            except Exception:
+                pass
+
+        profile_batches = [known_handles[i:i+25] for i in range(0, len(known_handles), 25)]
+        await asyncio.gather(*[resolve_batch(b) for b in profile_batches])
+
     for start in range(0, total, chunk_size):
         chunk = second_order_nodes[start:start + chunk_size]
 
-        # Dispara o lote em paralelo
-        results = await asyncio.gather(
-            *[fetch_following(session, user, semaphore) for user in chunk],
-            return_exceptions=True
-        )
+        if use_parallel_relationships and known_dids:
+            results = await asyncio.gather(
+                *[check_relationships_parallel(session, user, known_dids, handle_by_did, semaphore) for user in chunk],
+                return_exceptions=True
+            )
+        else:
+            results = await asyncio.gather(
+                *[fetch_following(session, user, semaphore) for user in chunk],
+                return_exceptions=True
+            )
 
         for user, following_list in zip(chunk, results):
             if isinstance(following_list, Exception):
@@ -206,6 +282,7 @@ async def enrich_edges_with_cross_connections(
 
     print(f"\n[3ª Passagem] Concluída. {len(new_edges)} novas arestas encontradas.")
     return new_edges
+
 
 
 async def collect_network(core_user, safe_limit, max_followers: int = 5000):
