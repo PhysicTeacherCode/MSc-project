@@ -1,3 +1,4 @@
+import heapq
 import networkx as nx
 
 def build_graph(edges):
@@ -33,6 +34,4 @@ def get_influential_nodes(G, top_n=5):
     """
     Retorna os 'n' nós com maior grau (centralidade local).
     """
-    degrees = dict(G.degree())
-    sorted_nodes = sorted(degrees.items(), key=lambda item: item[1], reverse=True)
-    return [node for node, degree in sorted_nodes[:top_n]]
+    return [node for node, degree in heapq.nlargest(top_n, G.degree(), key=lambda item: item[1])]
