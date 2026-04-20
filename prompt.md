@@ -120,7 +120,7 @@ Não utilize o SDK `atproto`. Toda a coleta deve ser feita via requisições HTT
   - `global_word_times`: `{word: array.array('d')}`
   - `user_word_sets`: `{did: {interned_words}}`
   - `all_users`: lista completa de DIDs internados
-- Usar `aiohttp.TCPConnector(ssl=False, ttl_dns_cache=300)` para performance.
+- Usar `aiohttp.TCPConnector(ttl_dns_cache=300)` para performance.
 - HTTP 429: aguardar 60s com backoff; exibir aviso no terminal.
 
 ---
