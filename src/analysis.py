@@ -1,5 +1,4 @@
 import pandas as pd
-import re
 import numpy as np
 
 def analyze_word_intervals_dict(global_word_times):
