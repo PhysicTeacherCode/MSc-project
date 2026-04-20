@@ -1,0 +1,20 @@
+# Bibliotecas de Coleta e Redes
+aiohttp
+networkx
+cdlib
+leidenalg
+pandas
+matplotlib
+
+# Bibliotecas para Física Estatística (Ising)
+# NOTA: O coniii (v3.0.1) requer versões específicas de scipy e numpy para compilação e execução.
+numpy<1.25.0
+scipy==1.9.3
+numba
+coniii
+
+# --- INSTRUÇÕES DE AMBIENTE ---
+# Para garantir que o coniii compile corretamente no Windows, utilize:
+# conda create -n bluesky_ising -c conda-forge python=3.10 numpy<1.25.0 scipy=1.9.3 numba matplotlib boost==1.74 jupyter
+# conda activate bluesky_ising
+# pip install coniii --no-build-isolation
