@@ -83,10 +83,12 @@ async def main():
                                     filtered_df.to_csv(csv_path, index=False, encoding='utf-8-sig')
                                     
                                     # --- NOVO CACHE DE USO RAM PARA ACELERAR A OPÇÃO 3 ---
-                                    import pickle
-                                    cache_path = os.path.join(plots_out, f".cache_usersets_{comm_name}.pkl")
-                                    with open(cache_path, 'wb') as f:
-                                        pickle.dump((user_word_sets, all_community_users), f)
+                                    import json
+                                    cache_path = os.path.join(plots_out, f".cache_usersets_{comm_name}.json")
+                                    with open(cache_path, 'w', encoding='utf-8') as f:
+                                        # Convert sets to lists for JSON serialization
+                                        serializable_user_word_sets = {k: list(v) for k, v in user_word_sets.items()}
+                                        json.dump((serializable_user_word_sets, all_community_users), f)
                                         
                                     print(f"[Sucesso] {len(filtered_df)} palavras salvas em: {csv_path}")
                                     print(f"  [>] Cache dos dicionários locais de usuários salvo em background.")
@@ -119,17 +121,19 @@ async def main():
                         from src.analysis import create_ising_matrix_from_sets
                         from src.ising_coniii import inferir_todos, gerar_figura2
                         import shutil
-                        import pickle
+                        import json
                         
                         plots_out = os.path.dirname(kw_path)
                         comm_name = os.path.splitext(os.path.basename(gexf_path))[0]
-                        cache_path = os.path.join(plots_out, f".cache_usersets_{comm_name}.pkl")
+                        cache_path = os.path.join(plots_out, f".cache_usersets_{comm_name}.json")
                         
                         if os.path.exists(cache_path):
                             print("\n[Memória] Arquivo de coletas em Cache da Opção 2 recuperado!")
                             print(f"[Zero API] O sistema abortou o download duplo de 3.000 posts e os injetou instantaneamente do seu Disco local.")
-                            with open(cache_path, 'rb') as f:
-                                user_word_sets, all_community_users = pickle.load(f)
+                            with open(cache_path, 'r', encoding='utf-8') as f:
+                                loaded_user_word_sets, all_community_users = json.load(f)
+                                # Convert lists back to sets
+                                user_word_sets = {k: set(v) for k, v in loaded_user_word_sets.items()}
                         else:
                             # 3. Coleta dados estrangeiros que não possuam memória na mesma base
                             print("\n[Coleta HTTP] Nenhuma memória viva dessa rede. Iniciando nova coleta via API...")
