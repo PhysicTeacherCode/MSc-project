@@ -1,44 +1,47 @@
+import os
+
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import numpy as np
-import os
 
-def plot_figure_b1(df, output_dir="data/plots", filename="figure_B1.png"):
+
+def plot_figure_b1(df, total_users=None, output_dir="data/plots", filename="figure_B1.png",
+                   min_occurrences=None, max_time_std_days=None):
     """
-    Gera o gráfico Figure B1 (Probability Density vs Standard Deviation in Time).
-    Estilo: publicação científica (inspirado em Hall & Bialek, 2019).
+    Figure B1 inspired by Hall & Bialek.
+
+    Plots the probability density of temporal standard deviations in word usage.
+    Candidate keywords should be frequent enough and localized in time.
     """
-    if df.empty or 'desvio_padrao' not in df.columns:
-        print("[Plot] DataFrame vazio ou sem a coluna 'desvio_padrao'.")
+    required = {'occurrences', 'time_std_days'}
+    if df.empty or not required.issubset(df.columns):
+        print("[Plot] DataFrame vazio ou sem as colunas 'occurrences' e 'time_std_days'.")
         return
 
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, filename)
 
-    # Filtro de dados
-    data = df['desvio_padrao'].dropna()
+    data = df['time_std_days'].dropna()
     data = data[data > 0]
-    
     if data.empty:
-        print("[Plot] Sem dados válidos para plotar.")
+        print("[Plot] Sem dados validos para plotar.")
         return
 
-    # Bins logarítmicos com centros geométricos (1000 bins)
-    log_bins = np.logspace(-1, 4, 500)
+    min_val = max(float(data.min()), 1e-3)
+    max_val = float(data.max())
+    if max_val <= min_val:
+        max_val = min_val * 10.0
+
+    log_bins = np.logspace(np.log10(min_val * 0.8), np.log10(max_val * 1.2), 80)
     counts, bin_edges = np.histogram(data, bins=log_bins, density=False)
-    
-    # Para obter as linhas horizontais de C=1, 2, 3 (como na sua imagem de referência), 
-    # não podemos dividir pela largura do bin (Delta x), pois Delta x cresce com x
-    # e faria o C=1 virar uma linha diagonal caindo de acordo com 1/x. 
-    # Calculamos apenas a probabilidade (Frequência Relativa) ou a Densidade em log-space.
-    probabilities = counts / counts.sum()
+    bin_widths = np.diff(bin_edges)
+    density = counts / (counts.sum() * bin_widths)
     bin_centers = np.sqrt(bin_edges[:-1] * bin_edges[1:])
 
-    # ── Estilo Científico ────────────────────────────────────────────────
     plt.rcParams.update({
         'font.family': 'serif',
         'font.serif': ['Times New Roman', 'DejaVu Serif', 'serif'],
-        'mathtext.fontset': 'cm',          # Computer Modern (padrão LaTeX)
+        'mathtext.fontset': 'cm',
         'font.size': 12,
         'axes.labelsize': 14,
         'axes.titlesize': 14,
@@ -60,40 +63,29 @@ def plot_figure_b1(df, output_dir="data/plots", filename="figure_B1.png"):
     })
 
     fig, ax = plt.subplots(figsize=(7, 5.5))
+    valid = density > 0
+    ax.scatter(bin_centers[valid], density[valid], s=10, color='black', edgecolors='none', zorder=3)
 
-    # Scatter com pontos sólidos pequenos (estilo paper)
-    valid = probabilities > 0
-    ax.scatter(bin_centers[valid], probabilities[valid], 
-               s=8, color='black', edgecolors='none', zorder=3)
-    
-    # Escalas log-log
     ax.set_xscale('log')
     ax.set_yscale('log')
-    
-    # Ticks em todas as potências de 10
+
     ax.xaxis.set_major_locator(ticker.LogLocator(base=10, numticks=20))
     ax.yaxis.set_major_locator(ticker.LogLocator(base=10, numticks=20))
     ax.xaxis.set_minor_locator(ticker.LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=20))
     ax.yaxis.set_minor_locator(ticker.LogLocator(base=10, subs=np.arange(2, 10) * 0.1, numticks=20))
 
-    # Limites estáticos conforme imagem de referência
-    ax.set_xlim(1e-2, 1e4)
-    ax.set_ylim(1e-6, 1e0)
+    if max_time_std_days is not None:
+        ax.axvline(max_time_std_days, color='tab:red', linestyle='--', linewidth=1.0)
 
-    # Labels
-    ax.set_xlabel('Standard Deviation in Time')
-    ax.set_ylabel('Probability Density')
+    ax.set_xlabel('Standard deviation in time (days)')
+    ax.set_ylabel('Probability density')
 
-    # Sem título (padrão em artigos — o caption fica na legenda da figura)
-    # Grid discreto apenas nas major ticks
     ax.grid(True, which='major', linewidth=0.4, alpha=0.4, color='gray')
     ax.grid(True, which='minor', linewidth=0.2, alpha=0.2, color='gray')
 
     fig.tight_layout()
     fig.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
-    
-    # Restaura defaults para não contaminar outros plots
+
     plt.rcdefaults()
-    
-    print(f"[Plot] Gráfico B1 salvo em: {output_path}")
+    print(f"[Plot] Figure B1 (densidade do desvio temporal) salva em: {output_path}")

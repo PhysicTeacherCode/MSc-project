@@ -1,5 +1,6 @@
 import os
 import sys
+from collections import Counter
 
 # Suprime os prints de "Note: to be able to use all crisp methods..." do cdlib
 _stdout = sys.stdout
@@ -97,3 +98,100 @@ def extract_subcommunity_graph(G, community_id):
         if data.get("Community ID") == community_id and data.get("Community ID") != -1
     ]
     return G.subgraph(nodes_in_comm).copy()
+
+
+def deduplicate_handles_in_graph(G) -> list:
+    """
+    Detecta e remove nós com handles duplicados em TODO o grafo.
+    Deve ser chamada ANTES da detecção de comunidades.
+    
+    Agrupa nós por handle normalizado (case-insensitive + strip).
+    Quando há duplicata, mantém o nó com MAIOR grau.
+    Remove os demais do grafo G in-place.
+    
+    Retorna:
+        Lista de handles removidos (para log).
+    """
+    handle_groups = {}
+    for node in list(G.nodes()):
+        key = node.strip().lower()
+        handle_groups.setdefault(key, []).append(node)
+    
+    removed = []
+    for normalized, group in handle_groups.items():
+        if len(group) <= 1:
+            continue
+        
+        group_sorted = sorted(group, key=lambda n: G.degree(n), reverse=True)
+        keeper = group_sorted[0]
+        duplicates = group_sorted[1:]
+        
+        print(f"  [Dedup] Handle '{normalized}': mantendo '{keeper}' (grau={G.degree(keeper)}), "
+              f"removendo {len(duplicates)} duplicata(s): {duplicates}")
+        
+        for dup in duplicates:
+            G.remove_node(dup)
+            removed.append(dup)
+    
+    return removed
+
+
+def find_core_user_community(partition: dict, core_user: str) -> int:
+    """
+    Identifica em qual comunidade o core_user foi alocado.
+    Retorna o ID da comunidade ou -1 se o core_user não está na partição.
+    """
+    return partition.get(core_user, -1)
+
+
+def deduplicate_handles_in_community(G, partition: dict, community_id: int) -> list:
+    """
+    Detecta e remove nós com handles duplicados dentro de uma comunidade.
+    
+    Na API do Bluesky, um mesmo handle pode aparecer mais de uma vez quando
+    coletado por caminhos BFS distintos (1ª e 2ª ordem). Embora o grafo trate
+    handles como nós, variações de case (maiúsc./minúsc.) podem gerar duplicatas
+    semânticas (ex: 'User.bsky.social' e 'user.bsky.social').
+    
+    Estratégia de remoção:
+        - Agrupa nós por handle normalizado (lowercase).
+        - Quando há duplicata, mantém o nó com MAIOR grau (mais conexões),
+          pois é o mais informativo para a rede.
+        - Remove os demais do grafo G in-place.
+    
+    Retorna:
+        Lista de handles removidos (para log).
+    """
+    # Filtra nós pertencentes à comunidade alvo
+    nodes_in_comm = [
+        node for node, data in G.nodes(data=True)
+        if data.get("Community ID") == community_id
+    ]
+    
+    # Agrupa por handle normalizado (case-insensitive)
+    handle_groups = {}
+    for node in nodes_in_comm:
+        key = node.strip().lower()
+        handle_groups.setdefault(key, []).append(node)
+    
+    removed = []
+    for normalized, group in handle_groups.items():
+        if len(group) <= 1:
+            continue
+        
+        # Ordena por grau descendente: mantém o mais conectado
+        group_sorted = sorted(group, key=lambda n: G.degree(n), reverse=True)
+        keeper = group_sorted[0]
+        duplicates = group_sorted[1:]
+        
+        print(f"  [Dedup] Handle '{normalized}': mantendo '{keeper}' (grau={G.degree(keeper)}), "
+              f"removendo {len(duplicates)} duplicata(s): {duplicates}")
+        
+        for dup in duplicates:
+            G.remove_node(dup)
+            # Remove da partição também
+            if dup in partition:
+                del partition[dup]
+            removed.append(dup)
+    
+    return removed

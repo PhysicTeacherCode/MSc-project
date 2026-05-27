@@ -1,35 +1,71 @@
 import pandas as pd
 import numpy as np
 
-def analyze_word_intervals_dict(global_word_times):
+def _temporal_std_days(timestamps):
     """
-    Calcula o desvio padrão do tempo entre ocorrências de cada palavra.
-    Recebe um dicionário {palavra: [lista_de_idades]}.
+    Desvio padrao temporal dos usos de uma palavra, em dias.
     """
-    if not global_word_times:
+    if not timestamps or len(timestamps) < 2:
+        return np.nan
+
+    parsed = pd.to_datetime(pd.Series(timestamps), utc=True, errors='coerce')
+    parsed = parsed.dropna()
+    if len(parsed) < 2:
+        return np.nan
+
+    seconds = parsed.map(lambda value: value.timestamp()).to_numpy(dtype=np.float64)
+    return float(np.std(seconds, ddof=0) / 86400.0)
+
+
+def analyze_word_frequency(global_word_counts, user_word_sets, total_users=None, global_word_timestamps=None):
+    """
+    Analisa a frequência de cada palavra pela perspectiva dos USUÁRIOS.
+    
+    Métricas por palavra:
+        - occurrences: total de ocorrências em todos os posts.
+        - n_users:     quantos usuários distintos usaram a palavra.
+        - user_freq:   n_users / total de usuários na comunidade (0.0 a 1.0).
+    
+    Filtragem downstream:
+        - Corte Inferior (min_users): exigir 3-5 usuários (ou 5% da comunidade)
+          garante que o otimizador tenha "sinal" suficiente para calcular J.
+        - Corte Superior (max_users): remover keywords usadas por >80-90% dos
+          usuários evita spins congelados em +1 (variância → 0, h_i → ∞).
+    """
+    if not user_word_sets:
         print("[Análise] Mapa de palavras vazio.")
         return pd.DataFrame()
 
-    print(f"[Análise] Processando {len(global_word_times)} palavras únicas para estatísticas...")
+    if total_users is None:
+        total_users = len(user_word_sets)
+    if global_word_timestamps is None:
+        global_word_timestamps = {}
+    
+    print(f"[Análise] Processando {len(global_word_counts)} palavras únicas para estatísticas de frequência...")
+    
+    # Contagem de usuários por palavra (inversão do dicionário)
+    word_user_count = {}
+    for user, words in user_word_sets.items():
+        for w in words:
+            word_user_count[w] = word_user_count.get(w, 0) + 1
     
     stats = []
-    for word, times in global_word_times.items():
-        if len(times) < 3:
+    for word, count in global_word_counts.items():
+        n_users = word_user_count.get(word, 0)
+        if n_users < 2:  # pelo menos 2 usuários para ser relevante
             continue
-            
-        sorted_times = sorted(times)
-        intervals = np.diff(sorted_times)
         
-        if len(intervals) > 0:
-            std_val = np.std(intervals)
-            stats.append({
-                "word": word,
-                "occurrences": len(times),
-                "desvio_padrao": std_val
-            })
+        entry = {
+            "word": word,
+            "occurrences": count,
+            "n_users": n_users,
+            "user_freq": round(n_users / total_users, 4) if total_users > 0 else 0.0,
+            "time_std_days": _temporal_std_days(global_word_timestamps.get(word, []))
+        }
+        stats.append(entry)
             
     result_df = pd.DataFrame(stats)
-    print(f"[Análise] Concluída. {len(result_df)} palavras atingiram o critério estatístico.")
+    print(f"[Análise] Concluída. {len(result_df)} palavras com >= 2 usuários.")
     return result_df
 
 def create_ising_matrix_from_sets(user_word_sets, keywords, all_users):
@@ -66,3 +102,84 @@ def create_ising_matrix_from_sets(user_word_sets, keywords, all_users):
                 matrix.at[did, kw] = 1
                 
     return matrix
+
+
+def filter_ising_users_by_activity(ising_matrix, min_activity=0.10, max_activity=0.90):
+    """
+    Remove usuarios quase inativos ou quase sempre ativos na matriz de Ising.
+
+    A atividade aqui e a fracao de keywords filtradas em que o usuario aparece
+    com spin +1. Esses usuarios extremos deixam campos h_i muito grandes e
+    podem piorar o condicionamento da inferencia de h e J.
+    """
+    if ising_matrix.empty:
+        empty_report = pd.DataFrame(
+            columns=["user", "activity_frac", "active_keywords", "total_keywords", "reason"]
+        )
+        return ising_matrix, empty_report
+
+    if min_activity < 0 or max_activity > 1 or min_activity > max_activity:
+        raise ValueError("Os limites de atividade devem obedecer 0 <= min <= max <= 1.")
+
+    active = (ising_matrix.values > 0)
+    activity_frac = active.mean(axis=1)
+    active_keywords = active.sum(axis=1)
+
+    keep_mask = (activity_frac >= min_activity) & (activity_frac <= max_activity)
+    reasons = np.where(
+        activity_frac < min_activity,
+        "pouco_ativo",
+        np.where(activity_frac > max_activity, "muito_ativo", "mantido")
+    )
+
+    report = pd.DataFrame({
+        "user": ising_matrix.index.tolist(),
+        "activity_frac": activity_frac,
+        "active_keywords": active_keywords,
+        "total_keywords": ising_matrix.shape[1],
+        "reason": reasons,
+    })
+
+    removed = report.loc[~keep_mask].copy()
+    filtered = ising_matrix.loc[keep_mask].copy()
+    return filtered, removed
+
+
+def filter_ising_keywords_by_popularity(ising_matrix, min_users=3, max_user_frac=0.90):
+    """
+    Refiltra keywords depois do filtro de usuarios.
+
+    Quando usuarios sao removidos, uma keyword que antes passava no filtro pode
+    ficar ativa em apenas 1 usuario, o que deixa os tripletos muito ruidosos.
+    """
+    if ising_matrix.empty:
+        empty_report = pd.DataFrame(
+            columns=["keyword", "n_users", "user_frac", "reason"]
+        )
+        return ising_matrix, empty_report
+
+    n_users_total = ising_matrix.shape[0]
+    min_users = max(1, int(min_users))
+    max_users = max(min_users, int(np.floor(n_users_total * max_user_frac)))
+    max_users = min(max_users, n_users_total)
+
+    active_counts = (ising_matrix.values > 0).sum(axis=0)
+    user_frac = active_counts / n_users_total if n_users_total else np.zeros_like(active_counts)
+    keep_mask = (active_counts >= min_users) & (active_counts <= max_users)
+
+    reasons = np.where(
+        active_counts < min_users,
+        "poucos_usuarios",
+        np.where(active_counts > max_users, "usuarios_demais", "mantida")
+    )
+
+    report = pd.DataFrame({
+        "keyword": ising_matrix.columns.tolist(),
+        "n_users": active_counts,
+        "user_frac": user_frac,
+        "reason": reasons,
+    })
+
+    removed = report.loc[~keep_mask].copy()
+    filtered = ising_matrix.loc[:, keep_mask].copy()
+    return filtered, removed

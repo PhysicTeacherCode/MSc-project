@@ -43,6 +43,65 @@ async def fetch_follower_counts(session, handles: list, semaphore) -> dict:
     return counts
 
 
+async def fetch_post_counts(session, handles: list, semaphore) -> dict:
+    """
+    Consulta perfis em batch de 25 handles via app.bsky.actor.getProfiles.
+    Retorna {handle: postsCount} para verificar atividade mínima.
+    """
+    url = f"https://{BSKY_SERVICE}/xrpc/app.bsky.actor.getProfiles"
+
+    async def fetch_batch(batch: list) -> dict:
+        params = [("actors[]", h) for h in batch]
+        try:
+            async with semaphore:
+                async with session.get(url, params=params) as resp:
+                    if resp.status == 429:
+                        await asyncio.sleep(30)
+                        return {}
+                    if resp.status != 200:
+                        return {}
+                    data = await resp.json()
+                    return {
+                        p.get("handle", ""): p.get("postsCount", 0)
+                        for p in data.get("profiles", [])
+                    }
+        except Exception:
+            return {}
+
+    batches = [handles[i:i + 25] for i in range(0, len(handles), 25)]
+    results = await asyncio.gather(*[fetch_batch(b) for b in batches])
+
+    counts = {}
+    for r in results:
+        counts.update(r)
+    return counts
+
+
+async def filter_inactive_users(handles: list, min_posts: int, safe_limit: int) -> tuple[list, int]:
+    """
+    Filtra usuários com menos de min_posts posts totais no perfil.
+    Usa app.bsky.actor.getProfiles (batch de 25) para consultar postsCount.
+    Retorna (lista_filtrada, quantidade_removida).
+    """
+    if min_posts <= 0:
+        return handles, 0
+
+    semaphore = asyncio.Semaphore(safe_limit)
+    async with aiohttp.ClientSession() as session:
+        counts = await fetch_post_counts(session, handles, semaphore)
+
+    filtered = []
+    removed = 0
+    for h in handles:
+        pc = counts.get(h, 0)
+        if pc >= min_posts:
+            filtered.append(h)
+        else:
+            removed += 1
+
+    return filtered, removed
+
+
 async def filter_celebrities(session, handles: list, semaphore, max_followers: int) -> tuple[list, int]:
     """
     Filtra os handles que ultrapassam o limite de seguidores.

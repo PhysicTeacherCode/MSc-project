@@ -5,6 +5,7 @@ cdlib
 leidenalg
 pandas
 matplotlib
+optuna
 
 # Bibliotecas para Física Estatística (Ising)
 # NOTA: O coniii (v3.0.1) requer versões específicas de scipy e numpy para compilação e execução.
