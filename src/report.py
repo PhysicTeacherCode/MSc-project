@@ -50,7 +50,15 @@ def generate_global_report(G, num_communities, modularity_score, output_dir="dat
         
     print(f"[Relatório] Gerado {file_path}")
 
-def generate_subcommunity_report(subgraph, display_id, original_cid, output_dir="data/reports"):
+def generate_subcommunity_report(
+    subgraph,
+    display_id,
+    original_cid,
+    output_dir="data/reports",
+    k_core=None,
+    k_core_score=None,
+    verbose=True
+):
     """
     Gera as métricas de topologia específicas do subgrafo de uma comunidade.
     Utiliza o 'display_id' para o nome do arquivo (numeração incremental) e 
@@ -61,9 +69,13 @@ def generate_subcommunity_report(subgraph, display_id, original_cid, output_dir=
     stats = get_network_metrics(subgraph)
     # Buscando os 5 nós mais influentes na comunidade local
     top_5 = get_influential_nodes(subgraph, top_n=5)
+    k_core_text = "sem k-core local" if not k_core else f"k={k_core}"
+    score_text = "N/A" if k_core_score is None else f"{k_core_score:.6f}"
     
     report_content = (
         f"=== RELATÓRIO DA SUBCOMUNIDADE {display_id} (ID Original: {original_cid}) ===\n"
+        f"K-core aplicado na exportação: {k_core_text}\n"
+        f"Critério k-core (grau médio/nós): {score_text}\n"
         f"Quantidade de nós internos: {stats['num_nodes']}\n"
         f"Quantidade de arestas internas: {stats['num_edges']}\n"
         f"Densidade da subcomunidade: {stats['density']:.6f}\n"
@@ -78,4 +90,5 @@ def generate_subcommunity_report(subgraph, display_id, original_cid, output_dir=
     with open(file_path, "w", encoding="utf-8") as file:
         file.write(report_content)
         
-    print(f"[Relatório] Gerado {file_path}")
+    if verbose:
+        print(f"[Relatório] Gerado {file_path}")

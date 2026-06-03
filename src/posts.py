@@ -46,17 +46,14 @@ async def fetch_user_posts(session, did, semaphore, max_posts_per_user=500):
                     ) as resp:
                         if resp.status == 429:
                             wait_s = min(60 * attempt, 180)
-                            print(f"  > [Rate Limit] {did}: aguardando {wait_s}s...{' ' * 30}", end="\r")
                             await asyncio.sleep(wait_s)
                             continue
                         if 500 <= resp.status < 600:
                             wait_s = min(2 ** attempt, 60)
-                            print(f"  > [Retry] {did}: HTTP {resp.status}, tentativa {attempt}/{MAX_PAGE_RETRIES} em {wait_s}s...{' ' * 30}", end="\r")
                             await asyncio.sleep(wait_s)
                             continue
                         if resp.status != 200:
                             status = {"ok": False, "error": f"HTTP {resp.status}"}
-                            print(f"  > [Erro] {did}: HTTP {resp.status}")
                             return did, word_counts, word_timestamps, posts_processed, status
 
                         data = await resp.json()
@@ -64,20 +61,16 @@ async def fetch_user_posts(session, did, semaphore, max_posts_per_user=500):
             except (aiohttp.ClientError, asyncio.TimeoutError) as e:
                 wait_s = min(2 ** attempt, 60)
                 if attempt < MAX_PAGE_RETRIES:
-                    print(f"  > [Retry] {did}: {type(e).__name__} tentativa {attempt}/{MAX_PAGE_RETRIES}; aguardando {wait_s}s...{' ' * 30}", end="\r")
                     await asyncio.sleep(wait_s)
                 else:
                     status = {"ok": False, "error": f"{type(e).__name__}: {e}"}
-                    print(f"  > [Erro] {did}: coleta incompleta após {MAX_PAGE_RETRIES} tentativas ({status['error']})")
                     return did, word_counts, word_timestamps, posts_processed, status
             except Exception as e:
                 status = {"ok": False, "error": f"{type(e).__name__}: {e}"}
-                print(f"  > [Erro] {did}: {status['error']}")
                 return did, word_counts, word_timestamps, posts_processed, status
 
         if data is None:
             status = {"ok": False, "error": "sem resposta válida após retries"}
-            print(f"  > [Erro] {did}: {status['error']}")
             return did, word_counts, word_timestamps, posts_processed, status
 
         try:
@@ -106,13 +99,9 @@ async def fetch_user_posts(session, did, semaphore, max_posts_per_user=500):
             cursor = data.get("cursor")
             if not cursor or posts_processed >= max_posts_per_user:
                 break
-            
-            if posts_processed > 0 and posts_processed % 500 == 0:
-                print(f"  > [Contexto] {did}: {posts_processed} posts processados...{' ' * 30}")
 
         except Exception as e:
             status = {"ok": False, "error": f"{type(e).__name__}: {e}"}
-            print(f"  > [Erro] {did}: {status['error']}")
             return did, word_counts, word_timestamps, posts_processed, status
 
     return did, word_counts, word_timestamps, posts_processed, status
@@ -135,9 +124,9 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
     G = nx.read_gexf(gexf_path)
     all_users = [sys.intern(u) for u in G.nodes()]
     
-    print(f"\n[Coleta] Iniciando coleta de {len(all_users)} usuários (Máx {max_posts_per_user} posts/user)...")
+    print(f"\n[Coleta] Iniciando coleta de {len(all_users)} usuários (Máx {max_posts_per_user} posts sem replies/user)...")
     if min_posts > 0:
-        print(f"  [Filtro] Usuários com < {min_posts} posts serão removidos após coleta.")
+        print(f"  [Filtro] Usuários com < {min_posts} posts sem replies serão removidos após coleta.")
     
     global_word_counts = {}    # {word_str: int}
     global_word_timestamps = {}  # {word_str: [createdAt]}
@@ -165,6 +154,8 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
                 break
         
         count = 0
+        progress_step = max(25, len(all_users) // 10) if all_users else 25
+        next_progress = progress_step
         while tasks:
             done, tasks = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
             for t in done:
@@ -188,8 +179,10 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
                 user_word_timestamp_maps[did] = interned_word_timestamps
                 
                 count += 1
-                if count % 10 == 0 or count == len(all_users):
-                    print(f"  > Progresso Total: {count}/{len(all_users)} processados...{' ' * 20}", end="\r")
+                if count >= next_progress or count == len(all_users):
+                    print(f"  [Coleta] {count}/{len(all_users)} usuarios processados.")
+                    while next_progress <= count:
+                        next_progress += progress_step
                 
                 try:
                     u = next(user_iter)
@@ -209,19 +202,7 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
         inactive_users = [u for u in all_users if user_post_counts.get(u, 0) < min_posts]
         
         if inactive_users:
-            print(f"\n[Filtro] Removendo {len(inactive_users)} usuários com < {min_posts} posts...")
-            failed_inactive = [
-                u for u in inactive_users
-                if not user_fetch_status.get(u, {}).get("ok", True)
-            ]
-            if failed_inactive:
-                print(f"[Aviso] {len(failed_inactive)} removido(s) tiveram coleta incompleta; podem não ser realmente inativos:")
-                for u in failed_inactive[:10]:
-                    err = user_fetch_status.get(u, {}).get("error")
-                    print(f"  - {u}: {user_post_counts.get(u, 0)} posts coletados; erro={err}")
-                if len(failed_inactive) > 10:
-                    print(f"  ... e mais {len(failed_inactive) - 10}")
-            
+            print(f"\n[Filtro] Removendo {len(inactive_users)} usuários com < {min_posts} posts sem replies...")
             for u in inactive_users:
                 if u in user_word_sets:
                     del user_word_sets[u]
@@ -231,7 +212,19 @@ async def collect_community_posts_df(gexf_path, semaphore_limit, max_posts_per_u
             inactive_set = set(inactive_users)
             all_users = [u for u in all_users if u not in inactive_set]
             
-            print(f"[Filtro] {len(all_users)} usuários ativos mantidos (>= {min_posts} posts).")
+            print(f"[Filtro] {len(all_users)} usuários ativos mantidos (>= {min_posts} posts sem replies).")
+
+    failed_users = [
+        u for u, status in user_fetch_status.items()
+        if not status.get("ok", True)
+    ]
+    if failed_users:
+        print(f"[Coleta] {len(failed_users)} usuario(s) tiveram coleta incompleta.")
+        for u in failed_users[:5]:
+            err = user_fetch_status.get(u, {}).get("error")
+            print(f"  - {u}: {err}")
+        if len(failed_users) > 5:
+            print(f"  ... e mais {len(failed_users) - 5}")
     
     # Agrega somente os usuarios mantidos depois do filtro de atividade.
     for did, wmap in user_word_count_maps.items():

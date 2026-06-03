@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import networkx as nx
 import os
 
-def generate_network_visualization(G, output_dir="data/processed/png", filename="visualizacao.png"):
+def generate_network_visualization(G, output_dir="data/processed/png", filename="visualizacao.png", verbose=True):
     """
     Gera uma visualização estática no estilo Hall & Bialek (2019):
     - Fundo branco
@@ -13,7 +13,8 @@ def generate_network_visualization(G, output_dir="data/processed/png", filename=
     """
     total_nodes = G.number_of_nodes()
     if total_nodes == 0:
-        print(f"[Visualização] Grafo vazio, pulando geração de {filename}.")
+        if verbose:
+            print(f"[Visualização] Grafo vazio, pulando geração de {filename}.")
         return
 
     os.makedirs(output_dir, exist_ok=True)
@@ -21,16 +22,17 @@ def generate_network_visualization(G, output_dir="data/processed/png", filename=
 
     # 1. Filtragem (redes massivas → top 1000 hubs)
     if total_nodes < 1000:
-        print(f"[Visualização] {filename}: Grafo completo ({total_nodes} nós).")
         subgraph = G.copy()
+        scope_msg = f"{total_nodes} nós"
     else:
-        print(f"[Visualização] {filename}: Extraindo top 1000 hubs de {total_nodes} nós...")
         degrees = dict(G.degree())
         top_nodes = sorted(degrees, key=degrees.get, reverse=True)[:1000]
         subgraph = G.subgraph(top_nodes).copy()
+        scope_msg = f"top 1000 hubs de {total_nodes} nós"
 
     if subgraph.number_of_nodes() == 0:
-        print(f"[Visualização] {filename}: Subgrafo vazio, abortando.")
+        if verbose:
+            print(f"[Visualização] {filename}: Subgrafo vazio, abortando.")
         return
 
     n = subgraph.number_of_nodes()
@@ -38,7 +40,8 @@ def generate_network_visualization(G, output_dir="data/processed/png", filename=
     # 2. Layout Fruchterman-Reingold (spring_layout)
     #    k pequeno → nós mais próximos (núcleo denso)
     #    iterations alto → melhor convergência para networks com hubs dominantes
-    print(f"[Visualização] {filename}: Calculando layout Fruchterman-Reingold ({n} nós)...")
+    if verbose:
+        print(f"[Visualização] Gerando {filename} ({scope_msg}).")
     pos = nx.spring_layout(
         subgraph,
         k=0.15,          # Distância ideal entre nós — menor = mais compacto
@@ -57,7 +60,6 @@ def generate_network_visualization(G, output_dir="data/processed/png", filename=
     edge_alpha = 0.5 if n < 200 else 0.3
 
     # 5. Desenha arestas (pretas e finas)
-    print(f"[Visualização] {filename}: Renderizando...")
     nx.draw_networkx_edges(
         subgraph, pos,
         ax=ax,
@@ -80,7 +82,7 @@ def generate_network_visualization(G, output_dir="data/processed/png", filename=
     plt.tight_layout(pad=0)
 
     # 7. Exporta
-    print(f"[Visualização] Salvando em {file_path}...")
     plt.savefig(file_path, dpi=300, bbox_inches='tight', facecolor='white')
     plt.close()
-    print(f"[Visualização] {filename}: Imagem salva com sucesso!")
+    if verbose:
+        print(f"[Visualização] Imagem salva: {file_path}")

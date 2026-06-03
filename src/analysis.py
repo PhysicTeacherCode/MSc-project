@@ -183,3 +183,100 @@ def filter_ising_keywords_by_popularity(ising_matrix, min_users=3, max_user_frac
     removed = report.loc[~keep_mask].copy()
     filtered = ising_matrix.loc[:, keep_mask].copy()
     return filtered, removed
+
+
+def filter_ising_keywords_by_jaccard(ising_matrix, threshold=0.80, keyword_stats=None):
+    """
+    Remove keywords redundantes com padrao de usuarios ativos muito parecido.
+
+    Jaccard(A, B) = usuarios_ativos_em_ambas / usuarios_ativos_em_pelo_menos_uma.
+    Se uma keyword tiver Jaccard >= threshold com alguma keyword ja mantida, ela
+    e removida. A ordem favorece keywords mais frequentes e mais localizadas no
+    tempo quando keyword_stats esta disponivel.
+    """
+    if ising_matrix.empty:
+        empty_report = pd.DataFrame(
+            columns=[
+                "keyword", "similar_to", "jaccard", "intersection_users",
+                "union_users", "n_users", "n_users_similar"
+            ]
+        )
+        return ising_matrix, empty_report
+
+    threshold = float(threshold)
+    if threshold <= 0 or threshold > 1:
+        raise ValueError("O limiar de Jaccard deve obedecer 0 < limiar <= 1.")
+
+    active = (ising_matrix.values > 0)
+    keywords = np.asarray(ising_matrix.columns.tolist(), dtype=object)
+    active_counts = active.sum(axis=0).astype(np.int64)
+
+    rank_df = pd.DataFrame({
+        "keyword": keywords,
+        "active_users": active_counts,
+        "original_order": np.arange(len(keywords)),
+    })
+
+    if keyword_stats is not None and not keyword_stats.empty and "word" in keyword_stats.columns:
+        stats = keyword_stats.copy()
+        stats["keyword"] = stats["word"].astype(str).str.lower()
+        keep_cols = ["keyword"]
+        for col in ("occurrences", "n_users", "time_std_days"):
+            if col in stats.columns:
+                keep_cols.append(col)
+        stats = stats[keep_cols].drop_duplicates("keyword", keep="first")
+        rank_df = rank_df.merge(stats, on="keyword", how="left")
+
+    if "occurrences" not in rank_df.columns:
+        rank_df["occurrences"] = rank_df["active_users"]
+    if "n_users" not in rank_df.columns:
+        rank_df["n_users"] = rank_df["active_users"]
+    if "time_std_days" not in rank_df.columns:
+        rank_df["time_std_days"] = np.nan
+
+    rank_df["occurrences"] = rank_df["occurrences"].fillna(rank_df["active_users"])
+    rank_df["n_users"] = rank_df["n_users"].fillna(rank_df["active_users"])
+    rank_df["time_std_rank"] = rank_df["time_std_days"].fillna(np.inf)
+
+    rank_df = rank_df.sort_values(
+        by=["n_users", "occurrences", "time_std_rank", "original_order"],
+        ascending=[False, False, True, True],
+    )
+    ordered_indices = rank_df["original_order"].to_numpy(dtype=np.int64)
+
+    kept_indices = []
+    removed_rows = []
+
+    for idx in ordered_indices:
+        users_kw = active[:, idx]
+        n_users_kw = int(active_counts[idx])
+        redundant = False
+
+        for kept_idx in kept_indices:
+            users_kept = active[:, kept_idx]
+            intersection = int(np.logical_and(users_kw, users_kept).sum())
+            union = int(np.logical_or(users_kw, users_kept).sum())
+            if union == 0:
+                continue
+
+            jaccard = intersection / union
+            if jaccard >= threshold:
+                removed_rows.append({
+                    "keyword": keywords[idx],
+                    "similar_to": keywords[kept_idx],
+                    "jaccard": jaccard,
+                    "intersection_users": intersection,
+                    "union_users": union,
+                    "n_users": n_users_kw,
+                    "n_users_similar": int(active_counts[kept_idx]),
+                })
+                redundant = True
+                break
+
+        if not redundant:
+            kept_indices.append(idx)
+
+    kept_columns = [keywords[i] for i in sorted(kept_indices)]
+    filtered = ising_matrix.loc[:, kept_columns].copy()
+    removed = pd.DataFrame(removed_rows)
+    return filtered, removed

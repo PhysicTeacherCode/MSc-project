@@ -6,7 +6,7 @@ import numpy as np
 
 
 def plot_figure_b1(df, total_users=None, output_dir="data/plots", filename="figure_B1.png",
-                   min_occurrences=None, max_time_std_days=None):
+                   min_occurrences=None, max_time_std_days=None, n_bins=2000):
     """
     Figure B1 inspired by Hall & Bialek.
 
@@ -32,7 +32,7 @@ def plot_figure_b1(df, total_users=None, output_dir="data/plots", filename="figu
     if max_val <= min_val:
         max_val = min_val * 10.0
 
-    log_bins = np.logspace(np.log10(min_val * 0.8), np.log10(max_val * 1.2), 80)
+    log_bins = np.logspace(np.log10(min_val * 0.8), np.log10(max_val * 1.2), n_bins + 1)
     counts, bin_edges = np.histogram(data, bins=log_bins, density=False)
     bin_widths = np.diff(bin_edges)
     density = counts / (counts.sum() * bin_widths)

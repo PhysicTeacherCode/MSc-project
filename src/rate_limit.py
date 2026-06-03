@@ -23,7 +23,7 @@ async def _test_batch(batch_size: int) -> bool:
 async def calibrate_rate_limit(max_test_concurrency=100) -> int:
     """Aumenta gradativamente a concorrência para achar o limite de requisições por segundo.
     Retorna um limite seguro para o Semáforo do asyncio."""
-    print("[Rate Limit] Iniciando teste de calibração de requisições...")
+    print(f"[Rate Limit] Calibrando concorrência (até {max_test_concurrency}).")
     
     # Vamos testar concorrências de 10, 20, 30...
     step = 10
@@ -33,7 +33,6 @@ async def calibrate_rate_limit(max_test_concurrency=100) -> int:
 
     while current_concurrency <= max_test_concurrency:
         start = time.time()
-        print(f"[Rate Limit] Testando lote com concorrência = {current_concurrency}...", end="\r")
         
         hit_limit = await _test_batch(current_concurrency)
         elapsed = time.time() - start
@@ -53,5 +52,5 @@ async def calibrate_rate_limit(max_test_concurrency=100) -> int:
     if current_concurrency > max_test_concurrency:
         print(f"[Rate Limit] Não bateu em 429 nos testes. Adotando safe limit padrão = {safe_limit}.")
     
-    print(f"[Rate Limit] ---> CONCORRÊNCIA SEGURA ESTABELECIDA: {safe_limit}")
+    print(f"[Rate Limit] Concorrência segura: {safe_limit}")
     return safe_limit
