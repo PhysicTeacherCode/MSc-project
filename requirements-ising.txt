@@ -1,0 +1,18 @@
+# Dependências adicionais para a opção 3 do menu (Ising/ConIII).
+#
+# Recomendado: Python 3.10 em ambiente Conda separado.
+# Ambiente testado na EC2/WSL:
+#   conda create -n test -c conda-forge python=3.10 numpy scipy pandas matplotlib networkx aiohttp numba pip -y
+#   conda activate test
+#   python -m pip install --no-build-isolation -r requirements-ising.txt
+#
+# O ConIII 3.0.1 é antigo e tenta acessar aliases removidos do SciPy moderno
+# (ex.: scipy.exp, scipy.cosh). O projeto aplica um patch em src/ising_coniii.py,
+# mas imports diretos de coniii fora do projeto podem exigir o sitecustomize.py
+# descrito em AWS_EC2_RUNBOOK.md.
+-r requirements.txt
+
+scipy>=1.10,<1.16
+numpy>=1.24,<2.0
+numba
+coniii==3.0.1

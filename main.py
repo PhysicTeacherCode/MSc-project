@@ -8,12 +8,82 @@ from datetime import datetime
 from src.rate_limit import calibrate_rate_limit
 from src.collection import collect_network
 from src.modeling import build_graph
-from src.community import detect_communities_multi_resolution, apply_partition, extract_subcommunity_graph, deduplicate_handles_in_graph
+from src.community import (
+    detect_communities_multi_resolution,
+    apply_partition,
+    extract_subcommunity_graph_with_kcore,
+    deduplicate_handles_in_graph,
+)
 from src.report import generate_global_report, generate_subcommunity_report, get_next_available_index
 from src.visualization import generate_network_visualization
 from src.posts import collect_community_posts_df, interactive_select_gexf, interactive_select_csv
 from src.analysis import analyze_word_frequency
 from src.plotting import plot_figure_b1
+
+def format_kcore_scenarios(scenarios):
+    """
+    Formata os cenarios de k-core como usuarios/grau medio, compactando
+    intervalos de k que produzem o mesmo resultado.
+    """
+    if not scenarios:
+        return "k0:0u/g0.0"
+
+    items = sorted((int(k), v) for k, v in scenarios.items())
+    groups = []
+    start_k = prev_k = items[0][0]
+    prev_value = (
+        items[0][1].get("nodes", 0),
+        items[0][1].get("edges", 0),
+        round(items[0][1].get("avg_degree", 0.0), 2),
+    )
+
+    for k, stats in items[1:]:
+        value = (
+            stats.get("nodes", 0),
+            stats.get("edges", 0),
+            round(stats.get("avg_degree", 0.0), 2),
+        )
+        if k == prev_k + 1 and value == prev_value:
+            prev_k = k
+            continue
+        groups.append((start_k, prev_k, prev_value))
+        start_k = prev_k = k
+        prev_value = value
+    groups.append((start_k, prev_k, prev_value))
+
+    parts = []
+    for start, end, value in groups:
+        label = f"k{start}" if start == end else f"k{start}-{end}"
+        nodes, _, avg_degree = value
+        parts.append(f"{label}:{nodes}u/g{avg_degree:.1f}")
+
+    if len(parts) > 8:
+        parts = parts[:6] + ["..."] + parts[-1:]
+    return " | ".join(parts)
+
+
+def best_kcore_choice(scenarios):
+    """
+    Escolhe automaticamente o k-core que maximiza grau_medio / n_usuarios.
+    Em empate, preserva mais usuarios; persistindo empate, escolhe o menor k.
+    """
+    best = None
+    for k_core, stats in scenarios.items():
+        n_users = stats.get("nodes", 0)
+        if n_users < 2:
+            continue
+        avg_degree = stats.get("avg_degree", 0.0)
+        score = avg_degree / n_users if n_users else 0.0
+        candidate = (score, n_users, -int(k_core), int(k_core), avg_degree)
+        if best is None or candidate > best:
+            best = candidate
+
+    if best is None:
+        return 0, 0.0
+
+    score, _, _, selected_k, _ = best
+    return selected_k, score
+
 
 async def main():
     print("=" * 50)
@@ -44,16 +114,9 @@ async def main():
                 # 1. Coleta otimizada
                 from src.analysis import analyze_word_frequency, create_ising_matrix_from_sets
                 
-                print("\nFILTRO DE ATIVIDADE:")
-                print("  Usuários com poucos posts geram ruído no modelo de Ising.")
-                try:
-                    min_posts_input = input("  Mínimo de posts por usuário [padrão: 0 = sem filtro]: ").strip()
-                    min_posts = int(min_posts_input) if min_posts_input else 0
-                except ValueError:
-                    min_posts = 0
-                
+                print("\n[Coleta] Usando os usuarios do GEXF sem novo filtro por minimo de posts.")
                 global_word_counts, global_word_timestamps, user_word_sets, all_community_users = await collect_community_posts_df(
-                    gexf_path, semaphore_limit=safe_limit, min_posts=min_posts
+                    gexf_path, semaphore_limit=safe_limit
                 )
                 
                 if global_word_counts:
@@ -173,7 +236,6 @@ async def main():
                     try:
                         from src.analysis import (
                             create_ising_matrix_from_sets,
-                            filter_ising_keywords_by_popularity,
                             filter_ising_users_by_activity,
                         )
                         from src.ising_coniii import (
@@ -184,6 +246,29 @@ async def main():
                             gerar_figura4,
                         )
                         print("[Backend] Usando ising_coniii (ConIII)")
+                        print("\nMÉTODO DE INFERÊNCIA ISING:")
+                        print("  [0] Auto: Enumerate exato se N<=20; senão MCH com warm start pseudo")
+                        print("  [1] Pseudo-Likelihood com auto-tuning/warm start")
+                        print("  [2] MCH - Monte Carlo Histogram com initial guess do pseudo")
+                        print("  [3] Enumerate exato (somente N<=20)")
+                        metodo_input = input("Escolha o método [padrão: 0]: ").strip().lower()
+                        if metodo_input in {"1", "p", "pl", "pseudo"}:
+                            metodo_inferencia = "pseudo"
+                        elif metodo_input in {"2", "m", "mch"}:
+                            metodo_inferencia = "mch"
+                        elif metodo_input in {"3", "e", "exact", "exato", "enumerate"}:
+                            metodo_inferencia = "exact"
+                        else:
+                            metodo_inferencia = "auto"
+
+                        if metodo_inferencia == "mch":
+                            print("  -> Método selecionado: MCH.")
+                        elif metodo_inferencia == "exact":
+                            print("  -> Método selecionado: Enumerate exato.")
+                        elif metodo_inferencia == "auto":
+                            print("  -> Método selecionado: Auto.")
+                        else:
+                            print("  -> Método selecionado: Pseudo-Likelihood.")
                         import shutil
                         import json
                         
@@ -201,14 +286,8 @@ async def main():
                         else:
                             # 3. Coleta dados estrangeiros que não possuam memória na mesma base
                             print("\n[Coleta HTTP] Nenhuma memória viva dessa rede. Iniciando nova coleta via API...")
-                            print("\nFILTRO DE ATIVIDADE:")
-                            try:
-                                min_posts_input = input("  Mínimo de posts por usuário [padrão: 0 = sem filtro]: ").strip()
-                                min_posts = int(min_posts_input) if min_posts_input else 0
-                            except ValueError:
-                                min_posts = 0
                             _, _, user_word_sets, all_community_users = await collect_community_posts_df(
-                                gexf_path, semaphore_limit=safe_limit, min_posts=min_posts
+                                gexf_path, semaphore_limit=safe_limit
                             )
                         
                         # 4. Carrega keywords e gera matriz de Ising
@@ -224,6 +303,13 @@ async def main():
                             plots_out = os.path.dirname(kw_path)
                             # Nome inclui o nome da comunidade para diferenciar
                             comm_name = os.path.splitext(os.path.basename(gexf_path))[0]
+                            n_keywords_csv = ising_matrix.shape[1]
+                            n_keywords_present = int((ising_matrix.values > 0).any(axis=0).sum())
+                            print(
+                                f"[Keywords] Vocabulário fixo do CSV preservado: {n_keywords_csv} keywords "
+                                f"({n_keywords_present} com ocorrência na comunidade selecionada; "
+                                f"{n_keywords_csv - n_keywords_present} ausentes mantidas como -1)."
+                            )
 
                             print("\nFILTRO DE ATIVIDADE NA MATRIZ ISING:")
                             print("  Remove usuarios que aparecem em poucas ou em quase todas as keywords filtradas.")
@@ -262,31 +348,10 @@ async def main():
                                 print("[Erro] Menos de 3 usuarios sobraram apos o filtro de atividade. Ajuste os limites.")
                                 continue
 
-                            n_keywords_before = ising_matrix.shape[1]
-                            ising_matrix, removed_popularity_keywords = filter_ising_keywords_by_popularity(
-                                ising_matrix,
-                                min_users=3,
-                                max_user_frac=0.90
-                            )
                             print(
-                                f"  [Keywords] Mantidas {ising_matrix.shape[1]}/{n_keywords_before} keywords "
-                                "apos refiltro na matriz final (3 usuarios <= n_users <= 90%)."
+                                f"  [Keywords] Sem refiltro por comunidade: {ising_matrix.shape[1]} keywords "
+                                "do CSV seguem na matriz Ising."
                             )
-                            if len(removed_popularity_keywords) > 0:
-                                removed_kw_path = os.path.join(
-                                    plots_out,
-                                    f"keywords_refiltradas_pos_usuarios_{comm_name}_{session_id}.csv"
-                                )
-                                removed_popularity_keywords.to_csv(
-                                    removed_kw_path,
-                                    index=False,
-                                    encoding='utf-8-sig'
-                                )
-                                print(f"  [Keywords] Relatorio de keywords removidas: {removed_kw_path}")
-
-                            if ising_matrix.shape[1] < 1:
-                                print("[Erro] Nenhuma keyword sobrou apos o refiltro pos-usuarios. Ajuste os filtros.")
-                                continue
 
                             ising_path = os.path.join(plots_out, f"matriz_ising_{comm_name}.csv")
                             ising_matrix.to_csv(ising_path, encoding='utf-8-sig')
@@ -313,7 +378,8 @@ async def main():
                                 spin_matrix=S,
                                 session_id=session_id,
                                 lam=0.001,
-                                adjacency_mask=adjacency_mask
+                                adjacency_mask=adjacency_mask,
+                                metodo_inferencia=metodo_inferencia
                             )
                             
                             # 6. Figura 2 (Painel Duplo)
@@ -326,8 +392,8 @@ async def main():
                                 session_id=session_id
                             )
                             
-                            # 6.5. Figura 3 (Correlação de Tripletos) em múltiplos filtros topológicos
-                            triplet_modes = ["all", "coupled", "connected", "triangles"]
+                            # 6.5. Figura 3 (Correlação de Tripletos) apenas para triângulos topológicos
+                            triplet_modes = ["triangles"]
                             gerar_figura3_multimodo(
                                 spin_matrix=S,
                                 resultados_inferencia=resultados,
@@ -395,16 +461,21 @@ async def main():
             print(f"  → Celebridades com >{max_followers:,} seguidores serão removidas.\n")
             
             print("FILTRO DE ATIVIDADE MÍNIMA:")
-            print("  Usuários com poucos posts geram ruído nas comunidades e no modelo de Ising.")
+            print("  Usuários com poucos posts com replies geram ruído nas comunidades e no modelo de Ising.")
             try:
-                min_posts_input = input("  Mínimo de posts por usuário [padrão: 0 = sem filtro]: ").strip()
+                min_posts_input = input("  Mínimo de posts com replies por usuário [padrão: 0 = sem filtro]: ").strip()
                 min_posts = int(min_posts_input) if min_posts_input else 0
             except ValueError:
                 min_posts = 0
             if min_posts > 0:
-                print(f"  → Usuários com <{min_posts} posts serão removidos.\n")
+                print(f"  → Usuários com <{min_posts} posts com replies serão removidos.\n")
 
-            edges = await collect_network(core_user, safe_limit, max_followers=max_followers)
+            edges = await collect_network(
+                core_user,
+                safe_limit,
+                max_followers=max_followers,
+                min_posts=min_posts
+            )
             if not edges: continue
                 
             raw_G = build_graph(edges)
@@ -412,7 +483,7 @@ async def main():
             G = nx.k_core(raw_G, k=2)
             if G.number_of_nodes() == 0: continue
             
-            # ── Pré-processamento: Dedup + Filtro de Atividade ──────────────
+            # ── Pré-processamento: Dedup ────────────────────────────────────
             # 1. Deduplicação de handles (case-insensitive) em todo o grafo
             print(f"\n[Dedup] Verificando handles duplicados no grafo ({G.number_of_nodes()} nós)...")
             removed_dedup = deduplicate_handles_in_graph(G)
@@ -420,35 +491,25 @@ async def main():
                 print(f"[Dedup] {len(removed_dedup)} handle(s) duplicado(s) removido(s).")
             else:
                 print(f"[Dedup] Nenhum handle duplicado encontrado. Grafo limpo.")
-            
-            # 2. Filtro de atividade mínima (consulta postsCount via API)
-            if min_posts > 0:
-                from src.collection import filter_inactive_users
-                all_handles = list(G.nodes())
-                print(f"\n[Atividade] Verificando postsCount de {len(all_handles)} usuários (mínimo: {min_posts})...")
-                active_handles, removed_count = await filter_inactive_users(all_handles, min_posts, safe_limit)
-                
-                if removed_count > 0:
-                    inactive_set = set(all_handles) - set(active_handles)
-                    G.remove_nodes_from(inactive_set)
-                    print(f"[Atividade] {removed_count} usuário(s) removido(s) (<{min_posts} posts).")
-                    print(f"[Atividade] {G.number_of_nodes()} usuários ativos mantidos.")
-                else:
-                    print(f"[Atividade] Todos os usuários atendem ao mínimo de {min_posts} posts.")
-                
-                if G.number_of_nodes() == 0:
-                    print("[Erro] Nenhum usuário sobreviveu aos filtros.")
-                    continue
+            if G.number_of_nodes() == 0:
+                print("[Erro] Nenhum usuário sobreviveu aos filtros.")
+                continue
             
             # ── Detecção de Comunidades (sobre grafo já limpo) ──────────────
             results = detect_communities_multi_resolution(G, [1.0, 1.5, 2.0, 2.5, 3.0])
-            print("\nRESUMO LEIDEN (C++) - REFINADO COM K-CORE (k=2):")
+            print("\nRESUMO LEIDEN (C++):")
             for res, data in results.items():
-                if data['initial_mod'] > 0:
+                if data["num_communities"] > 0:
                     sizes = data['sizes'].values()
                     max_s = max(sizes) if sizes else 0
                     min_s = min(sizes) if sizes else 0
-                    print(f"Res [{res}]: {data['num_communities']} coms | Mod: {data['initial_mod']:.4f} -> {data['modularity']:.4f} | Maior: {max_s} | Menor: {min_s}")
+                    lowest = data.get("lowest_avg_degree") or {}
+                    print(
+                        f"Res [{res}]: {data['num_communities']} coms | "
+                        f"Maior: {max_s} | Menor: {min_s} | "
+                        f"Menor grau medio: C{lowest.get('cid')} "
+                        f"({lowest.get('size')} usuarios, g={lowest.get('avg_degree', 0.0):.2f})"
+                    )
                 else:
                     print(f"Res [{res}]: Nenhuma comunidade detectada.")
            
@@ -468,26 +529,77 @@ async def main():
 
             chosen_data = results[chosen_res]
             apply_partition(G, chosen_data["partition"])
+
+            kcore_rows = []
+            selected_kcores = {}
+            for cid, scenarios in chosen_data["kcore_scenarios"].items():
+                selected_k, selected_score = best_kcore_choice(scenarios)
+                selected_kcores[cid] = {"k_core": selected_k, "score": selected_score}
+
+                for k_core, stats in sorted(scenarios.items()):
+                    n_users = stats.get("nodes", 0)
+                    avg_degree = stats.get("avg_degree", 0.0)
+                    score = avg_degree / n_users if n_users else 0.0
+                    kcore_rows.append({
+                        "resolution": chosen_res,
+                        "community_id": cid,
+                        "k_core": k_core,
+                        "n_users": n_users,
+                        "n_edges": stats.get("edges", 0),
+                        "avg_degree": avg_degree,
+                        "avg_degree_per_user": score,
+                        "selected": k_core == selected_k,
+                    })
+            kcore_csv_path = os.path.join(reports_dir, f"cenarios_kcore_res_{chosen_res}.csv")
+            pd.DataFrame(kcore_rows).to_csv(kcore_csv_path, index=False, encoding="utf-8-sig")
+            print(f"\n[K-core] Cenários completos salvos em: {kcore_csv_path}")
             
             print("\nCOMUNIDADES:")
+            print("  Formato k-core: kX:n_usuarios/grau_medio. k* = escolhido por maior grau_medio/n_usuarios.")
             for cid, size in sorted(chosen_data["sizes"].items(), key=lambda x: x[1], reverse=True):
-                print(f"Comunidade {cid}: {size} usuários")
+                avg_degree = chosen_data["avg_degrees"].get(cid, 0.0)
+                kcore_text = format_kcore_scenarios(chosen_data["kcore_scenarios"].get(cid, {}))
+                selected = selected_kcores.get(cid, {"k_core": 0, "score": 0.0})
+                print(
+                    f"Comunidade {cid}: {size} usuarios | grau medio={avg_degree:.2f} | "
+                    f"k*={selected['k_core']} score={selected['score']:.4f} | {kcore_text}"
+                )
             
-            selection = input("\nIDs para exportar (ex: 0, 1): ").strip()
             exported_indices = []
-            if selection:
-                try:
-                    for cid in [int(x.strip()) for x in selection.split(",")]:
-                        if cid not in chosen_data["sizes"]: continue
-                        disp_id = get_next_available_index(gexf_dir, reports_dir)
-                        exported_indices.append(disp_id)
-                        sub_G = extract_subcommunity_graph(G, cid)
-                        
-                        # Nome padrão: comunidade_{id}_{core_user}.gexf
-                        nx.write_gexf(sub_G, os.path.join(gexf_dir, f"comunidade_{disp_id}_{core_user}.gexf"))
-                        generate_subcommunity_report(sub_G, disp_id, cid, output_dir=reports_dir)
-                        generate_network_visualization(sub_G, output_dir=png_dir, filename=f"comunidade_{disp_id}.png")
-                except: pass
+            export_failures = 0
+            for cid in sorted(chosen_data["sizes"], key=lambda c: chosen_data["sizes"][c], reverse=True):
+                selected = selected_kcores.get(cid, {"k_core": 0, "score": 0.0})
+                selected_k = selected["k_core"]
+                disp_id = get_next_available_index(gexf_dir, reports_dir)
+                sub_G = extract_subcommunity_graph_with_kcore(G, cid, k_core=selected_k)
+                if sub_G.number_of_nodes() < 2:
+                    export_failures += 1
+                    continue
+
+                exported_indices.append(disp_id)
+                nx.write_gexf(sub_G, os.path.join(gexf_dir, f"comunidade_{disp_id}_{core_user}.gexf"))
+                generate_subcommunity_report(
+                    sub_G,
+                    disp_id,
+                    cid,
+                    output_dir=reports_dir,
+                    k_core=selected_k,
+                    k_core_score=selected["score"],
+                    verbose=False,
+                )
+                generate_network_visualization(
+                    sub_G,
+                    output_dir=png_dir,
+                    filename=f"comunidade_{disp_id}.png",
+                    verbose=False,
+                )
+
+            print(
+                f"\n[Export] {len(exported_indices)} subcomunidades salvas automaticamente "
+                f"com k-core escolhido por grau_medio/n_usuarios."
+            )
+            if export_failures:
+                print(f"[Export] {export_failures} subcomunidade(s) ignorada(s) por ficarem com <2 usuarios.")
                 
             generate_global_report(G, chosen_data["num_communities"], chosen_data["modularity"], output_dir=reports_dir, selected_indices=exported_indices, core_user=core_user)
             
