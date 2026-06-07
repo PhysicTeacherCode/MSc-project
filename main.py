@@ -145,6 +145,28 @@ async def main():
                     print(f"  Total de usuários na comunidade: {user_count}")
                     print(f"\n  >>> Abra o arquivo para inspecionar os valores antes de filtrar. <<<")
 
+                    try:
+                        g_tmp = nx.read_gexf(gexf_path)
+                        n_edges_aij = int(g_tmp.number_of_edges())
+                        n_params_aij = user_count + n_edges_aij
+                        n_params_dense = user_count + user_count * (user_count - 1) // 2
+                        target_keywords_aij = int(np.ceil(5.0 * n_params_aij))
+                        target_keywords_dense = int(np.ceil(5.0 * n_params_dense))
+                        print("\n[Alvo Ising]")
+                        print(
+                            f"  Com A_ij do GEXF: parametros={n_params_aij} "
+                            f"({user_count} h + {n_edges_aij} J) -> ideal R>5p: "
+                            f">= {target_keywords_aij} keywords."
+                        )
+                        print(
+                            f"  Se J fosse denso: parametros={n_params_dense} -> "
+                            f">= {target_keywords_dense} keywords."
+                        )
+                    except Exception as e:
+                        n_params_aij = None
+                        target_keywords_aij = None
+                        print(f"\n[Alvo Ising] Nao foi possivel estimar R/parametros pelo GEXF ({type(e).__name__}: {e}).")
+
                     # --- Fase 2: Filtro Interativo de Keywords ---
                     print("\nFILTRAGEM DE KEYWORDS:")
                     print(f"  Corte Inferior: exija que a keyword seja usada por pelo menos X usuários (ex: 3 ou 5% da comunidade)")
@@ -178,6 +200,12 @@ async def main():
 
                             print(f"\n=> Esse filtro resultou em {len(filtered_df)} palavras.")
                             print(f"   min_users={min_users}, max_users={max_users} ({max_users_pct:.0f}% de {user_count}), min_freq={min_freq}, max_time_std_days={max_time_std_days}")
+                            if n_params_aij:
+                                ratio_ising = len(filtered_df) / n_params_aij
+                                print(
+                                    f"   R/parametros estimado com A_ij: {ratio_ising:.2f} "
+                                    f"(alvo > 5; ideal >= {target_keywords_aij} keywords)."
+                                )
                             
                             if not filtered_df.empty:
                                 confirm = input("Deseja prosseguir e salvar essas keywords? (s/n): ").strip().lower()
@@ -195,7 +223,6 @@ async def main():
                                         total_users=user_count,
                                         output_dir=plots_out,
                                         filename="figure_B1_com_corte.png",
-                                        min_occurrences=min_freq,
                                         max_time_std_days=max_time_std_days
                                     )
                                     
@@ -236,7 +263,6 @@ async def main():
                     try:
                         from src.analysis import (
                             create_ising_matrix_from_sets,
-                            filter_ising_users_by_activity,
                         )
                         from src.ising_coniii import (
                             construir_mascara_adjacencia,
@@ -245,17 +271,17 @@ async def main():
                             gerar_figura3_multimodo,
                             gerar_figura4,
                         )
-                        print("[Backend] Usando ising_coniii (ConIII)")
+                        print("[Backend] Usando ising_coniii (ConIII + MCH custom)")
                         print("\nMÉTODO DE INFERÊNCIA ISING:")
-                        print("  [0] Auto: Enumerate exato se N<=20; senão MCH com warm start pseudo")
-                        print("  [1] Pseudo-Likelihood com auto-tuning/warm start")
-                        print("  [2] MCH - Monte Carlo Histogram com initial guess do pseudo")
+                        print("  [0] Auto: Enumerate exato se N<=20; senão MCH")
+                        print("  [1] MCH - Monte Carlo Histogram")
+                        print("  [2] MCH-Custom - Numba/paralelo com execução fixa")
                         print("  [3] Enumerate exato (somente N<=20)")
                         metodo_input = input("Escolha o método [padrão: 0]: ").strip().lower()
-                        if metodo_input in {"1", "p", "pl", "pseudo"}:
-                            metodo_inferencia = "pseudo"
-                        elif metodo_input in {"2", "m", "mch"}:
+                        if metodo_input in {"1", "m", "mch"}:
                             metodo_inferencia = "mch"
+                        elif metodo_input in {"2", "mc", "custom", "custom_mch", "mch_custom", "mch-custom", "mch custom"}:
+                            metodo_inferencia = "mch_custom"
                         elif metodo_input in {"3", "e", "exact", "exato", "enumerate"}:
                             metodo_inferencia = "exact"
                         else:
@@ -263,12 +289,19 @@ async def main():
 
                         if metodo_inferencia == "mch":
                             print("  -> Método selecionado: MCH.")
+                        elif metodo_inferencia == "mch_custom":
+                            print("  -> Método selecionado: MCH-Custom.")
                         elif metodo_inferencia == "exact":
                             print("  -> Método selecionado: Enumerate exato.")
                         elif metodo_inferencia == "auto":
                             print("  -> Método selecionado: Auto.")
                         else:
-                            print("  -> Método selecionado: Pseudo-Likelihood.")
+                            print("  -> Método selecionado: MCH.")
+
+                        mch_learning_profile = "adaptive_samples"
+                        mch_sample_size = 100_000
+                        mch_maxiter = 200
+                        mch_interactive_continue = False
                         import shutil
                         import json
                         
@@ -311,42 +344,58 @@ async def main():
                                 f"{n_keywords_csv - n_keywords_present} ausentes mantidas como -1)."
                             )
 
-                            print("\nFILTRO DE ATIVIDADE NA MATRIZ ISING:")
-                            print("  Remove usuarios que aparecem em poucas ou em quase todas as keywords filtradas.")
-                            try:
-                                min_activity_input = input("  Atividade minima por usuario em % de keywords [padrao: 10]: ").strip()
-                                max_activity_input = input("  Atividade maxima por usuario em % de keywords [padrao: 90]: ").strip()
-                                min_activity_pct = float(min_activity_input) if min_activity_input else 10.0
-                                max_activity_pct = float(max_activity_input) if max_activity_input else 90.0
-                                if min_activity_pct < 0 or max_activity_pct > 100 or min_activity_pct > max_activity_pct:
-                                    raise ValueError
-                            except ValueError:
-                                print("  [Aviso] Limites invalidos. Usando padrao: 10% a 90%.")
-                                min_activity_pct = 10.0
-                                max_activity_pct = 90.0
-
-                            n_users_before = ising_matrix.shape[0]
-                            ising_matrix, removed_activity_users = filter_ising_users_by_activity(
-                                ising_matrix,
-                                min_activity=min_activity_pct / 100.0,
-                                max_activity=max_activity_pct / 100.0
-                            )
-                            n_removed = len(removed_activity_users)
-                            print(
-                                f"  [Filtro] Mantidos {ising_matrix.shape[0]}/{n_users_before} usuarios "
-                                f"({min_activity_pct:.1f}% <= atividade <= {max_activity_pct:.1f}%)."
-                            )
-                            if n_removed > 0:
-                                removed_path = os.path.join(
-                                    plots_out,
-                                    f"usuarios_filtrados_atividade_{comm_name}_{session_id}.csv"
-                                )
-                                removed_activity_users.to_csv(removed_path, index=False, encoding='utf-8-sig')
-                                print(f"  [Filtro] {n_removed} usuario(s) removido(s). Relatorio: {removed_path}")
-
                             if ising_matrix.shape[0] < 3:
-                                print("[Erro] Menos de 3 usuarios sobraram apos o filtro de atividade. Ajuste os limites.")
+                                print("[Erro] A matriz Ising tem menos de 3 usuarios. Nao ha spins suficientes para inferencia.")
                                 continue
+
+                            if metodo_inferencia in {"mch", "mch_custom"} or (
+                                metodo_inferencia == "auto" and ising_matrix.shape[0] > 20
+                            ):
+                                solver_label = "MCH-Custom" if metodo_inferencia == "mch_custom" else "MCH"
+                                print(f"\nPERFIL DO SOLVER {solver_label}:")
+                                print("  [1] Agressiva: passos maiores; mais rápida, maior risco de oscilação")
+                                print("  [2] Média: passos intermediários")
+                                print("  [3] Conservador: passos menores; mais estável, pode demorar mais")
+                                print("  [4] Adaptado ao número de amostras: muda o perfil conforme sample_size")
+                                print("  [5] Muito agressiva: passos ainda maiores; experimental")
+                                perfil_input = input("Escolha o perfil [padrão: 4]: ").strip().lower()
+                                if perfil_input in {"5", "ma", "muito agressiva", "muito agressivo", "muito_agressiva", "muito_agressivo", "very_aggressive"}:
+                                    mch_learning_profile = "very_aggressive"
+                                elif perfil_input in {"1", "a", "agressiva", "agressivo", "aggressive"}:
+                                    mch_learning_profile = "aggressive"
+                                elif perfil_input in {"2", "m", "media", "média", "medio", "médio", "medium"}:
+                                    mch_learning_profile = "medium"
+                                elif perfil_input in {"3", "c", "conservador", "conservadora", "conservative"}:
+                                    mch_learning_profile = "conservative"
+                                else:
+                                    mch_learning_profile = "adaptive_samples"
+                                perfil_label = {
+                                    "very_aggressive": "Muito agressiva",
+                                    "aggressive": "Agressiva",
+                                    "medium": "Média",
+                                    "conservative": "Conservador",
+                                    "adaptive_samples": "Adaptado ao número de amostras",
+                                }[mch_learning_profile]
+                                print(f"  -> Perfil {solver_label} selecionado: {perfil_label}.")
+                                while True:
+                                    try:
+                                        sample_input = input(f"Amostras {solver_label} por iteração [100000]: ").strip()
+                                        mch_sample_size = int(sample_input.replace(".", "").replace(",", "")) if sample_input else 100_000
+                                        if mch_sample_size >= 1000:
+                                            break
+                                    except ValueError:
+                                        pass
+                                    print(f"  [{solver_label}] Informe um inteiro >= 1000.")
+                                while True:
+                                    try:
+                                        iter_input = input(f"Iterações {solver_label} nesta rodada [200]: ").strip()
+                                        mch_maxiter = int(iter_input.replace(".", "").replace(",", "")) if iter_input else 200
+                                        if mch_maxiter >= 1:
+                                            break
+                                    except ValueError:
+                                        pass
+                                    print(f"  [{solver_label}] Informe um inteiro >= 1.")
+                                mch_interactive_continue = True
 
                             print(
                                 f"  [Keywords] Sem refiltro por comunidade: {ising_matrix.shape[1]} keywords "
@@ -379,10 +428,14 @@ async def main():
                                 session_id=session_id,
                                 lam=0.001,
                                 adjacency_mask=adjacency_mask,
-                                metodo_inferencia=metodo_inferencia
+                                metodo_inferencia=metodo_inferencia,
+                                mch_sample_size=mch_sample_size,
+                                mch_maxiter=mch_maxiter,
+                                mch_learning_profile=mch_learning_profile,
+                                mch_interactive_continue=mch_interactive_continue
                             )
                             
-                            # 6. Figura 2 (Painel Duplo)
+                            # 6. Figura 2 (3 painéis)
                             print("\n[Ising] Gerando figuras e relatórios...")
                             gerar_figura2(
                                 spin_matrix=S,

@@ -349,17 +349,18 @@ def normalizar_metodo_inferencia(metodo: str | None) -> str:
         "auto": "auto",
         "automatico": "auto",
         "automático": "auto",
-        "1": "pseudo",
-        "p": "pseudo",
-        "pl": "pseudo",
-        "pseudo": "pseudo",
-        "pseudo-likelihood": "pseudo",
-        "pseudolikelihood": "pseudo",
-        "2": "mch",
+        "1": "mch",
         "m": "mch",
         "mch": "mch",
         "monte carlo histogram": "mch",
         "monte-carlo-histogram": "mch",
+        "2": "mch_custom",
+        "mc": "mch_custom",
+        "custom": "mch_custom",
+        "custom_mch": "mch_custom",
+        "mch_custom": "mch_custom",
+        "mch-custom": "mch_custom",
+        "mch custom": "mch_custom",
         "3": "exact",
         "e": "exact",
         "exact": "exact",
@@ -368,8 +369,87 @@ def normalizar_metodo_inferencia(metodo: str | None) -> str:
         "enumerate-exato": "exact",
     }
     if metodo not in aliases:
-        raise ValueError("Metodo de inferencia invalido. Use 'auto', 'pseudo', 'mch' ou 'exact'.")
+        raise ValueError("Metodo de inferencia invalido. Use 'auto', 'mch', 'mch_custom' ou 'exact'.")
     return aliases[metodo]
+
+
+MCH_LEARNING_PROFILES = {
+    "very_aggressive": {
+        "label": "Muito agressivo",
+        "learn": {"maxdlamda": 0.80, "maxdlamdaNorm": 3.0, "eta": 0.40, "maxLearningSteps": 30},
+    },
+    "aggressive": {
+        "label": "Agressivo",
+        "learn": {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 25},
+    },
+    "medium": {
+        "label": "Medio",
+        "learn": {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 30},
+    },
+    "conservative": {
+        "label": "Conservador",
+        "learn": {"maxdlamda": 0.08, "maxdlamdaNorm": 0.5, "eta": 0.05, "maxLearningSteps": 40},
+    },
+    "adaptive_samples": {
+        "label": "Adaptado ao numero de amostras",
+        "learn": None,
+    },
+}
+
+
+def normalizar_perfil_mch(perfil: str | None) -> str:
+    aliases = {
+        "5": "very_aggressive",
+        "ma": "very_aggressive",
+        "muito agressivo": "very_aggressive",
+        "muito agressiva": "very_aggressive",
+        "muito_agressivo": "very_aggressive",
+        "muito_agressiva": "very_aggressive",
+        "muito-agressivo": "very_aggressive",
+        "muito-agressiva": "very_aggressive",
+        "very_aggressive": "very_aggressive",
+        "very-aggressive": "very_aggressive",
+        "1": "aggressive",
+        "agressiva": "aggressive",
+        "agressivo": "aggressive",
+        "aggressive": "aggressive",
+        "2": "medium",
+        "media": "medium",
+        "média": "medium",
+        "medio": "medium",
+        "médio": "medium",
+        "medium": "medium",
+        "3": "conservative",
+        "conservador": "conservative",
+        "conservadora": "conservative",
+        "conservative": "conservative",
+        "4": "adaptive_samples",
+        "adaptado": "adaptive_samples",
+        "adaptada": "adaptive_samples",
+        "adaptive": "adaptive_samples",
+        "adaptive_samples": "adaptive_samples",
+        "amostras": "adaptive_samples",
+        "sample": "adaptive_samples",
+        "samples": "adaptive_samples",
+    }
+    key = str(perfil or "adaptive_samples").strip().lower()
+    if not key:
+        return "adaptive_samples"
+    return aliases.get(key, "adaptive_samples")
+
+
+def parametros_mch_por_perfil(perfil: str, sample_size_current: int) -> dict:
+    perfil = normalizar_perfil_mch(perfil)
+    if perfil != "adaptive_samples":
+        return MCH_LEARNING_PROFILES[perfil]["learn"].copy()
+
+    if sample_size_current < 200_000:
+        return MCH_LEARNING_PROFILES["aggressive"]["learn"].copy()
+    if sample_size_current < 500_000:
+        return MCH_LEARNING_PROFILES["medium"]["learn"].copy()
+    if sample_size_current < 1_200_000:
+        return MCH_LEARNING_PROFILES["conservative"]["learn"].copy()
+    return {"maxdlamda": 0.05, "maxdlamdaNorm": 0.3, "eta": 0.035, "maxLearningSteps": 35}
 
 
 def construir_indices_parametros_aij(N: int, adjacency_mask: np.ndarray | None) -> np.ndarray | None:
@@ -417,6 +497,115 @@ def chute_inicial_ising(spin_matrix: np.ndarray,
     j_init = pack_J(J_init_mat) * 0.1
     initial_guess = np.concatenate([h_init, j_init])
     return np.clip(initial_guess, -param_bound, param_bound)
+
+
+def chute_independente_suavizado(spin_matrix: np.ndarray,
+                                  alpha: float = 0.5,
+                                  param_bound: float = 5.0) -> np.ndarray:
+    """
+    Chute independente com pseudocount beta-binomial para evitar h_i extremos.
+    """
+    R, N = spin_matrix.shape
+    n_plus = np.sum(spin_matrix > 0, axis=0).astype(np.float64)
+    p_plus = (n_plus + float(alpha)) / (R + 2.0 * float(alpha))
+    medias = np.clip(2.0 * p_plus - 1.0, -0.995, 0.995)
+    h_init = np.arctanh(medias)
+    return np.clip(np.concatenate([h_init, np.zeros(N * (N - 1) // 2)]), -param_bound, param_bound)
+
+
+def chute_mean_field_shrinkage(spin_matrix: np.ndarray,
+                               adjacency_mask: np.ndarray | None = None,
+                               shrinkage: float = 0.5,
+                               ridge: float = 1e-3,
+                               scale: float = 0.1,
+                               param_bound: float = 5.0) -> np.ndarray:
+    """
+    Chute naive mean-field com shrinkage na covariancia.
+
+    E usado apenas como candidato de warm-start; o torneio descarta o candidato
+    se ele piorar os erros pseudo-condicionais dos pares.
+    """
+    sample_f = spin_matrix.astype(np.float64)
+    R, N = sample_f.shape
+    medias = np.clip(sample_f.mean(axis=0), -0.995, 0.995)
+    centered = sample_f - medias
+    cov = (centered.T @ centered) / max(R, 1)
+    diag = np.diag(np.diag(cov))
+    shrinkage = float(np.clip(shrinkage, 0.0, 1.0))
+    cov_shrunk = (1.0 - shrinkage) * cov + shrinkage * diag
+    cov_shrunk += np.eye(N) * max(float(ridge), 0.0)
+
+    try:
+        inv_cov = np.linalg.pinv(cov_shrunk)
+    except np.linalg.LinAlgError:
+        inv_cov = np.linalg.pinv(cov_shrunk + np.eye(N) * 1e-2)
+
+    J = -float(scale) * inv_cov
+    np.fill_diagonal(J, 0.0)
+    A = preparar_mascara_adjacencia(adjacency_mask, N)
+    if A is not None:
+        J[~A] = 0.0
+    J = 0.5 * (J + J.T)
+
+    h = np.arctanh(medias) - J @ medias
+    multipliers = np.concatenate([h, pack_J(J)])
+    return np.clip(multipliers, -param_bound, param_bound)
+
+
+def chute_tap_shrinkage(spin_matrix: np.ndarray,
+                        adjacency_mask: np.ndarray | None = None,
+                        shrinkage: float = 0.5,
+                        ridge: float = 0.01,
+                        scale: float = 0.2,
+                        param_bound: float = 5.0) -> np.ndarray:
+    """
+    Chute TAP regularizado para warm-start.
+
+    A correcao TAP e usada apenas como candidato no torneio. Quando a solucao
+    quadratica fica mal definida, o par volta para o limite naive mean-field.
+    """
+    sample_f = spin_matrix.astype(np.float64)
+    R, N = sample_f.shape
+    medias = np.clip(sample_f.mean(axis=0), -0.995, 0.995)
+    centered = sample_f - medias
+    cov = (centered.T @ centered) / max(R, 1)
+    diag = np.diag(np.diag(cov))
+    shrinkage = float(np.clip(shrinkage, 0.0, 1.0))
+    cov_shrunk = (1.0 - shrinkage) * cov + shrinkage * diag
+    cov_shrunk += np.eye(N) * max(float(ridge), 0.0)
+
+    try:
+        inv_cov = np.linalg.pinv(cov_shrunk)
+    except np.linalg.LinAlgError:
+        inv_cov = np.linalg.pinv(cov_shrunk + np.eye(N) * 1e-2)
+
+    J = np.zeros((N, N), dtype=np.float64)
+    for i in range(N):
+        for j in range(i + 1, N):
+            q = float(medias[i] * medias[j])
+            inv_ij = float(inv_cov[i, j])
+            if abs(q) < 1e-8:
+                value = -inv_ij
+            else:
+                discriminant = 1.0 - 8.0 * q * inv_ij
+                if discriminant <= 0.0 or not np.isfinite(discriminant):
+                    value = -inv_ij
+                else:
+                    value = (-1.0 + np.sqrt(discriminant)) / (4.0 * q)
+            J[i, j] = value
+            J[j, i] = value
+
+    J *= float(scale)
+    np.fill_diagonal(J, 0.0)
+    A = preparar_mascara_adjacencia(adjacency_mask, N)
+    if A is not None:
+        J[~A] = 0.0
+    J = 0.5 * (J + J.T)
+
+    onsager = medias * ((J * J) @ (1.0 - medias * medias))
+    h = np.arctanh(medias) - J @ medias + onsager
+    multipliers = np.concatenate([h, pack_J(J)])
+    return np.clip(multipliers, -param_bound, param_bound)
 
 
 def listar_pares_livres(N: int, adjacency_mask: np.ndarray | None = None) -> list[tuple[int, int]]:
@@ -481,6 +670,351 @@ def calcular_pseudo_nll_media(sample: np.ndarray, multipliers: np.ndarray,
     if lam > 0:
         nll += 0.5 * lam * float(np.mean(multipliers * multipliers))
     return float(nll)
+
+
+def avaliar_warm_start_pseudo(sample: np.ndarray,
+                              multipliers: np.ndarray,
+                              adjacency_mask: np.ndarray | None = None,
+                              param_bound: float = 5.0,
+                              lam: float = 0.0) -> dict:
+    """
+    Avalia um warm-start por momentos pseudo-condicionais baratos.
+
+    Para cada configuracao empirica, calcula tanh(h_i + sum_j J_ij s_j). Isso
+    nao e uma expectativa exata do modelo Ising, mas e um bom proxy local para
+    escolher o ponto inicial do MCH, especialmente para C_ij em A_ij=1.
+    """
+    sample_f = sample.astype(np.float64)
+    R, N = sample_f.shape
+    multipliers = np.asarray(multipliers, dtype=np.float64)
+    h = multipliers[:N]
+    J = unpack_J(multipliers[N:], N)
+    A = preparar_mascara_adjacencia(adjacency_mask, N)
+    if A is not None:
+        J[~A] = 0.0
+    np.fill_diagonal(J, 0.0)
+
+    fields = sample_f @ J + h
+    cond_mean = np.tanh(fields)
+    mean_emp = sample_f.mean(axis=0)
+    mean_model = cond_mean.mean(axis=0)
+    mean_error = mean_model - mean_emp
+    mean_rmse = float(np.sqrt(np.mean(mean_error * mean_error)))
+
+    pares = listar_pares_livres(N, A)
+    if pares:
+        i_idx = np.asarray([i for i, _ in pares], dtype=np.int64)
+        j_idx = np.asarray([j for _, j in pares], dtype=np.int64)
+        pair_emp = (sample_f[:, i_idx] * sample_f[:, j_idx]).mean(axis=0)
+        pair_model_i = (cond_mean[:, i_idx] * sample_f[:, j_idx]).mean(axis=0)
+        pair_model_j = (sample_f[:, i_idx] * cond_mean[:, j_idx]).mean(axis=0)
+        pair_model = 0.5 * (pair_model_i + pair_model_j)
+        pair_error = pair_model - pair_emp
+        pair_rmse = float(np.sqrt(np.mean(pair_error * pair_error)))
+        pair_max_abs = float(np.max(np.abs(pair_error)))
+        if np.std(pair_emp) > 1e-12 and np.std(pair_model) > 1e-12:
+            pair_r = float(np.corrcoef(pair_emp, pair_model)[0, 1])
+        else:
+            pair_r = np.nan
+    else:
+        pair_rmse = 0.0
+        pair_max_abs = 0.0
+        pair_r = np.nan
+
+    all_errors = np.concatenate([mean_error, [pair_max_abs]])
+    max_abs_error = float(np.max(np.abs(all_errors))) if all_errors.size else 0.0
+    max_abs_theta = float(np.max(np.abs(multipliers))) if multipliers.size else 0.0
+    n_bound = int(np.sum(np.abs(multipliers) >= param_bound * 0.995))
+    pseudo_nll = calcular_pseudo_nll_media(sample, multipliers, adjacency_mask, lam=lam)
+    score = (
+        pair_rmse
+        + 0.30 * mean_rmse
+        + 0.10 * max_abs_error
+        + 0.002 * n_bound
+        + 0.01 * max(0.0, max_abs_theta - param_bound * 0.8)
+    )
+    return {
+        "score": float(score),
+        "pair_rmse": pair_rmse,
+        "pair_r": pair_r,
+        "pair_max_abs": pair_max_abs,
+        "mean_rmse": mean_rmse,
+        "max_abs_error": max_abs_error,
+        "pseudo_nll": float(pseudo_nll),
+        "max_abs_theta": max_abs_theta,
+        "n_bound": n_bound,
+    }
+
+
+def estimar_observaveis_solver_em_chunks(solver,
+                                         use_sparse: bool = False,
+                                         parameter_ix: np.ndarray | None = None,
+                                         chunk_size: int = 10_000) -> np.ndarray:
+    """
+    Calcula observaveis medios do solver sem materializar toda a matriz de
+    observaveis de uma vez. Evita MemoryError para amostras grandes.
+    """
+    states = np.asarray(solver.model.sample, dtype=np.int64)
+    n_states = states.shape[0]
+    total = None
+    for start in range(0, n_states, int(chunk_size)):
+        obs = solver.calc_observables(states[start:start + int(chunk_size)])
+        obs = np.atleast_2d(obs)
+        if use_sparse:
+            obs = obs[:, parameter_ix]
+        obs_sum = obs.sum(axis=0, dtype=np.float64)
+        if total is None:
+            total = np.zeros_like(obs_sum, dtype=np.float64)
+        total += obs_sum
+    return np.asarray(total / max(n_states, 1), dtype=np.float64)
+
+
+def avaliar_warm_start_mc_curto(sample: np.ndarray,
+                                multipliers: np.ndarray,
+                                adjacency_mask: np.ndarray | None = None,
+                                sample_size: int = 20_000,
+                                n_iters: int | None = None,
+                                burn_in: int | None = None) -> dict:
+    """
+    Avalia um candidato de warm-start pelo erro real dos constraints estimado
+    com uma amostragem MCH curta.
+    """
+    sample = sample.astype(np.int64)
+    R, N = sample.shape
+    sample_size = max(1_000, int(sample_size))
+    n_iters = int(n_iters or max(100, N * 20))
+    burn_in = int(burn_in or max(1_000, N * 100))
+    parameter_ix = construir_indices_parametros_aij(N, adjacency_mask)
+    use_sparse = parameter_ix is not None
+    solver_cls = coniii.solvers.SparseMCH if use_sparse else coniii.solvers.MCH
+    solver_kwargs = {
+        "sample": sample,
+        "sample_size": sample_size,
+        "iprint": False,
+        "sampler_kw": {"iprint": False},
+    }
+    if use_sparse:
+        solver_kwargs["parameter_ix"] = parameter_ix
+    solver = solver_cls(**solver_kwargs)
+    if use_sparse:
+        constraints = solver.constraints[parameter_ix]
+        solver._multipliers = solver.fill_in(np.asarray(multipliers, dtype=np.float64)[parameter_ix].copy())
+    else:
+        constraints = solver.constraints
+        solver._multipliers = np.asarray(multipliers, dtype=np.float64).copy()
+
+    solver.model.generate_sample(
+        n_iters,
+        burn_in,
+        multipliers=solver._multipliers,
+        generate_kwargs={"parallel": False},
+    )
+    estimate = estimar_observaveis_solver_em_chunks(
+        solver,
+        use_sparse=use_sparse,
+        parameter_ix=parameter_ix,
+        chunk_size=10_000,
+    )
+    error = estimate - constraints
+    abs_error = np.abs(error)
+    error_norm = float(np.linalg.norm(error))
+    max_error = float(abs_error.max()) if abs_error.size else 0.0
+    rms_error = float(np.sqrt(np.mean(error * error))) if error.size else 0.0
+    score = max(max_error, error_norm / np.sqrt(max(len(error), 1)))
+    return {
+        "mc_score": float(score),
+        "mc_error_norm": error_norm,
+        "mc_error_max_abs": max_error,
+        "mc_error_rms": rms_error,
+        "mc_sample_size": sample_size,
+    }
+
+
+def torneio_warm_starts(sample: np.ndarray,
+                        initial_guess: np.ndarray,
+                        adjacency_mask: np.ndarray | None,
+                        final_lam: float,
+                        param_bound: float = 5.0,
+                        enabled: bool = True) -> tuple[np.ndarray, dict]:
+    """
+    Gera varios candidatos de warm-start e escolhe o melhor por erro local de
+    pares em A_ij=1, nao apenas pelo pseudo-NLL.
+    """
+    if not enabled:
+        return initial_guess, {"enabled": False, "candidates": []}
+
+    sample = sample.astype(np.int64)
+    R, N = sample.shape
+    candidates: list[tuple[str, np.ndarray, dict]] = []
+
+    def add_candidate(name: str, multipliers: np.ndarray, origin: str = "deterministico"):
+        multipliers = np.clip(np.asarray(multipliers, dtype=np.float64), -param_bound, param_bound)
+        metrics = avaliar_warm_start_pseudo(
+            sample,
+            multipliers,
+            adjacency_mask=adjacency_mask,
+            param_bound=param_bound,
+            lam=max(float(final_lam), 0.0),
+        )
+        metrics["name"] = name
+        metrics["origin"] = origin
+        candidates.append((name, multipliers, metrics))
+        return metrics
+
+    print("\n  [Warm-start] Torneio de candidatos para inicializar o MCH:")
+    add_candidate("independente_suave", chute_independente_suavizado(sample, alpha=0.5, param_bound=param_bound))
+    add_candidate("covariancia_fraca", initial_guess)
+
+    meanfield_specs = [
+        (0.001, 0.05),
+        (0.001, 0.10),
+        (0.001, 0.15),
+        (0.001, 0.20),
+        (0.001, 0.30),
+        (0.001, 0.40),
+        (0.001, 0.60),
+        (0.003, 0.10),
+        (0.003, 0.20),
+        (0.010, 0.10),
+        (0.010, 0.20),
+        (0.030, 0.20),
+        (0.100, 0.20),
+        (0.300, 0.20),
+    ]
+    for ridge, scale in meanfield_specs:
+        name = f"meanfield_ridge_{ridge:g}_s{scale:g}"
+        try:
+            add_candidate(
+                name,
+                chute_mean_field_shrinkage(
+                    sample,
+                    adjacency_mask=adjacency_mask,
+                    shrinkage=0.5,
+                    ridge=ridge,
+                    scale=scale,
+                    param_bound=param_bound,
+                ),
+                origin="meanfield",
+            )
+        except Exception as e:
+            print(f"    - {name} falhou ({type(e).__name__}: {e})")
+
+    tap_specs = [
+        (0.010, 0.10),
+        (0.010, 0.20),
+        (0.030, 0.20),
+        (0.100, 0.20),
+    ]
+    for ridge, scale in tap_specs:
+        name = f"tap_ridge_{ridge:g}_s{scale:g}"
+        try:
+            add_candidate(
+                name,
+                chute_tap_shrinkage(
+                    sample,
+                    adjacency_mask=adjacency_mask,
+                    shrinkage=0.5,
+                    ridge=ridge,
+                    scale=scale,
+                    param_bound=param_bound,
+                ),
+                origin="tap",
+            )
+        except Exception as e:
+            print(f"    - {name} falhou ({type(e).__name__}: {e})")
+
+    pl_lambdas = []
+    for value in (0.1, 0.03, 0.01, 0.003, final_lam):
+        value = max(float(value), 0.0)
+        if value not in pl_lambdas:
+            pl_lambdas.append(value)
+
+    pl_kwargs = {
+        "method": "L-BFGS-B",
+        "options": {"maxiter": 300, "ftol": 1e-8, "gtol": 1e-6, "maxls": 50},
+    }
+    pl_start = chute_independente_suavizado(sample, alpha=1.0, param_bound=param_bound)
+    for lam_stage in pl_lambdas:
+        try:
+            candidate, soln = resolver_pseudo_l2_coniii(
+                sample,
+                initial_guess=pl_start,
+                lam=lam_stage,
+                param_bound=param_bound,
+                solver_kwargs=pl_kwargs,
+                adjacency_mask=adjacency_mask,
+            )
+            add_candidate(f"PL_lambda_{lam_stage:g}", candidate, origin="pseudo_likelihood")
+            pl_start = candidate
+        except Exception as e:
+            print(f"    - PL_lambda_{lam_stage:g} falhou ({type(e).__name__}: {e})")
+
+    ranked = sorted(candidates, key=lambda item: item[2]["score"])
+    for rank, (name, _, metrics) in enumerate(ranked[: min(10, len(ranked))], start=1):
+        pair_r = metrics["pair_r"]
+        pair_r_text = "nan" if not np.isfinite(pair_r) else f"{pair_r:.4f}"
+        print(
+            f"    [{rank}] {name:<22} score={metrics['score']:.5f} "
+            f"pair_RMSE={metrics['pair_rmse']:.5f} pair_r={pair_r_text} "
+            f"mean_RMSE={metrics['mean_rmse']:.5f} |theta|max={metrics['max_abs_theta']:.3f} "
+            f"bounds={metrics['n_bound']}"
+        )
+
+    if not ranked:
+        print("    [Aviso] Nenhum candidato valido; usando chute inicial base.")
+        return initial_guess, {"enabled": True, "selected": "initial_guess", "candidates": []}
+
+    mc_ranked = []
+    mc_shortlist = list(ranked[: min(10, len(ranked))])
+    shortlist_names = {item[0] for item in mc_shortlist}
+    for required_origin in ("meanfield", "tap", "pseudo_likelihood"):
+        if any(item[2].get("origin") == required_origin for item in mc_shortlist):
+            continue
+        for item in ranked:
+            if item[2].get("origin") == required_origin and item[0] not in shortlist_names:
+                mc_shortlist.append(item)
+                shortlist_names.add(item[0])
+                break
+
+    print("    [MC curto] Avaliando erro real dos melhores candidatos...")
+    for name, multipliers, metrics in mc_shortlist:
+        try:
+            mc_metrics = avaliar_warm_start_mc_curto(
+                sample,
+                multipliers,
+                adjacency_mask=adjacency_mask,
+                sample_size=20_000,
+            )
+            metrics.update(mc_metrics)
+            mc_ranked.append((name, multipliers, metrics))
+            print(
+                f"      - {name:<22} mc_score={metrics['mc_score']:.5f} "
+                f"max|erro|={metrics['mc_error_max_abs']:.5f} "
+                f"||erro||={metrics['mc_error_norm']:.5f}"
+            )
+        except Exception as e:
+            metrics["mc_error"] = f"{type(e).__name__}: {e}"
+            print(f"      - {name:<22} MC curto falhou ({type(e).__name__}: {e})")
+
+    if mc_ranked:
+        selected_name, selected_multipliers, selected_metrics = min(
+            mc_ranked,
+            key=lambda item: item[2]["mc_score"],
+        )
+        print(
+            f"    -> warm start escolhido por MC curto: {selected_name} "
+            f"(mc_score={selected_metrics['mc_score']:.5f})."
+        )
+    else:
+        selected_name, selected_multipliers, selected_metrics = ranked[0]
+        print(f"    -> warm start escolhido por proxy: {selected_name} (score={selected_metrics['score']:.5f}).")
+
+    return selected_multipliers, {
+        "enabled": True,
+        "selected": selected_name,
+        "selected_metrics": selected_metrics,
+        "candidates": [metrics for _, _, metrics in ranked],
+    }
 
 
 def auto_tune_pseudo_warm_start(sample: np.ndarray,
@@ -592,7 +1126,8 @@ def resolver_enumerate_exato(sample: np.ndarray,
                              adjacency_mask: np.ndarray | None = None,
                              lam: float = 0.0,
                              param_bound: float = 5.0,
-                             solver_kwargs: dict | None = None) -> tuple[np.ndarray, dict]:
+                             solver_kwargs: dict | None = None,
+                             verbose: bool = True) -> tuple[np.ndarray, dict]:
     """
     Inferencia MaxEnt exata por enumeracao para N <= 20.
 
@@ -606,10 +1141,11 @@ def resolver_enumerate_exato(sample: np.ndarray,
 
     pares_livres = listar_pares_livres(N, adjacency_mask)
     n_states = 2 ** N
-    print(
-        f"\n  [Enumerate-Exact] Enumerando 2^{N}={n_states:,} estados; "
-        f"{len(pares_livres)} acoplamentos livres."
-    )
+    if verbose:
+        print(
+            f"\n  [Enumerate-Exact] Enumerando 2^{N}={n_states:,} estados; "
+            f"{len(pares_livres)} acoplamentos livres."
+        )
 
     state_idx = np.arange(n_states, dtype=np.uint64)
     bits = ((state_idx[:, None] >> np.arange(N, dtype=np.uint64)[None, :]) & 1).astype(np.int8)
@@ -666,7 +1202,7 @@ def resolver_enumerate_exato(sample: np.ndarray,
         local_kwargs.update(solver_kwargs)
 
     res = minimize(objective, theta0, **local_kwargs)
-    if not res.success:
+    if verbose and not res.success:
         print(f"  [Enumerate-Exact] Aviso: otimizador parou sem convergencia formal ({res.message}).")
 
     multipliers = montar_multipliers_livres(res.x, N, pares_livres, param_bound=param_bound)
@@ -683,22 +1219,716 @@ def resolver_enumerate_exato(sample: np.ndarray,
         "n_states": n_states,
         "n_free_couplings": len(pares_livres),
     }
-    print(
-        "  [Enumerate-Exact] "
-        f"nit={info['nit']} | max|erro_momento|={info['moment_error_max_abs']:.6f} "
-        f"| ||erro||={info['moment_error_norm']:.6f}"
-    )
+    if verbose:
+        print(
+            "  [Enumerate-Exact] "
+            f"nit={info['nit']} | max|erro_momento|={info['moment_error_max_abs']:.6f} "
+            f"| ||erro||={info['moment_error_norm']:.6f}"
+        )
     return multipliers, info
+
+
+def _resolver_mch_loop_com_plateau(
+        solver,
+        constraints: np.ndarray,
+        initial_selected: np.ndarray,
+        use_sparse: bool,
+        parameter_ix: np.ndarray | None,
+        tol: float,
+        tol_norm: float,
+        n_iters: int,
+        burn_in: int,
+        maxiter: int,
+        mch_schedule,
+        plateau_rel_improvement: float,
+        plateau_patience: int,
+        plateau_max_error: float | None,
+        sample_increment: int,
+        sample_growth_factor: float,
+        max_sample_size: int,
+        sample_schedule: list[int] | tuple[int, ...] | None = None,
+        generate_kwargs: dict | None = None):
+    """
+    Executa o loop MCH do ConIII com amostragem adaptativa por platô.
+
+    O platô é avaliado comparando duas janelas consecutivas da média móvel do
+    maior erro absoluto. Quando a melhora é pequena, a próxima amostra cresce,
+    mas a inferência continua até convergir formalmente ou atingir maxiter.
+    """
+    generate_kwargs = generate_kwargs or {}
+    constraints = np.asarray(constraints, dtype=np.float64)
+    initial_selected = np.asarray(initial_selected, dtype=np.float64)
+    moving_average_window = max(1, int(plateau_patience))
+    sample_increment = max(1, int(sample_increment))
+    sample_growth_factor = max(1.0, float(sample_growth_factor))
+    initial_sample_size = int(solver.model.sampleSize)
+    max_sample_size = max(initial_sample_size, int(max_sample_size))
+    if sample_schedule is None:
+        sample_schedule = [100_000, 200_000, 400_000, 800_000, 1_600_000, 2_500_000]
+    sample_schedule = sorted({
+        int(s) for s in sample_schedule
+        if int(s) >= initial_sample_size and int(s) <= max_sample_size
+    } | {initial_sample_size, max_sample_size})
+
+    if use_sparse:
+        solver._multipliers = solver.fill_in(initial_selected.copy())
+    else:
+        solver._multipliers = initial_selected.copy()
+
+    def estimate_constraints() -> np.ndarray:
+        return estimar_observaveis_solver_em_chunks(
+            solver,
+            use_sparse=use_sparse,
+            parameter_ix=parameter_ix,
+            chunk_size=10_000,
+        )
+
+    def error_metrics(error: np.ndarray) -> tuple[float, float, float]:
+        abs_error = np.abs(error)
+        error_norm = float(np.linalg.norm(error))
+        max_error = float(abs_error.max())
+        score = max(
+            max_error / max(tol, np.finfo(float).eps),
+            error_norm / max(tol_norm, np.finfo(float).eps),
+        )
+        return float(score), error_norm, max_error
+
+    errors = []
+    mch_start = time.time()
+    last_report_time = mch_start
+
+    solver.model.generate_sample(
+        n_iters,
+        burn_in,
+        multipliers=solver._multipliers,
+        generate_kwargs=generate_kwargs,
+    )
+    this_constraints = estimate_constraints()
+    initial_error = this_constraints - constraints
+    errors.append(initial_error)
+    best_score, best_error_norm, best_max_error = error_metrics(initial_error)
+    best_iteration = 0
+    best_error = initial_error.copy()
+    best_multipliers = solver._multipliers.copy()
+    best_sample_size = int(solver.model.sampleSize)
+    best_updates = [{
+        "iteration": best_iteration,
+        "score": best_score,
+        "error_norm": best_error_norm,
+        "max_error": best_max_error,
+        "sample_size": best_sample_size,
+    }]
+    print(
+        f"  [MCH] Iteracao inicial | "
+        f"max|erro|={best_max_error:.5f} | "
+        f"||erro||={best_error_norm:.5f} | "
+        f"dentro_tol={np.mean(np.abs(initial_error) < tol) * 100:.1f}% | "
+        f"amostra={int(solver.model.sampleSize):,} | "
+        f"total={time.time() - mch_start:.1f}s",
+        flush=True,
+    )
+
+    counter = 0
+    moving_max_errors = []
+    moving_average_previous = np.nan
+    moving_average_recent = np.nan
+    final_relative_improvement = np.nan
+    current_error = initial_error.copy()
+    current_score = best_score
+    stop_reason = "maxiter"
+    errflag = 1
+    sample_size_history = [int(solver.model.sampleSize)]
+    sample_increase_events = []
+    backtracking_events = []
+    no_improvement_events = []
+    pre_mc_rejection_events = []
+    bad_chain_enabled = False
+    backtracking_strategy = "shrink_from_base"
+    max_attempts_per_iteration = 20
+    attempt_decay = 0.5
+    pre_mc_reject_margin = 1.02
+    attempt_status_width = 58
+    attempt_status_inline = sys.stdout.isatty()
+    learn_params = mch_schedule(counter, int(solver.model.sampleSize))
+    print(
+        "  [MCH] Pressione Ctrl+C para encerrar o MCH com segurança e usar a melhor iteração concluída.",
+        flush=True,
+    )
+
+    def print_attempt_status(iteration: int, attempt_idx: int) -> None:
+        status = (
+            f"  [MCH] Iteracao {iteration} | "
+            f"tentativa {attempt_idx}/{max_attempts_per_iteration}"
+        )
+        if attempt_status_inline:
+            print("\r" + status[:attempt_status_width].ljust(attempt_status_width), end="", flush=True)
+        else:
+            print(status, flush=True)
+
+    def clear_attempt_status() -> None:
+        if attempt_status_inline:
+            print("\r" + " " * attempt_status_width + "\r", end="", flush=True)
+
+    def learning_params_for_attempt(base_params: dict, attempt_idx: int) -> tuple[dict, float]:
+        scale = attempt_decay ** max(0, attempt_idx - 1)
+        local_params = dict(base_params)
+        for key in ("eta", "maxdlamda", "maxdlamdaNorm"):
+            if key in local_params:
+                local_params[key] = max(float(local_params[key]) * scale, 1e-8)
+        return local_params, scale
+
+    def aumentar_amostra_apos_backtracking(reason: str) -> bool:
+        nonlocal this_constraints, current_error, current_score
+        nonlocal moving_average_previous, moving_average_recent, final_relative_improvement
+        sample_size_used = int(solver.model.sampleSize)
+        if sample_size_used >= max_sample_size:
+            return False
+
+        next_values = [s for s in sample_schedule if s > sample_size_used]
+        next_sample_size = next_values[0] if next_values else max_sample_size
+        next_sample_size = min(next_sample_size, max_sample_size)
+        actual_increment = next_sample_size - sample_size_used
+        if actual_increment <= 0:
+            return False
+
+        solver.model.sampleSize = next_sample_size
+        sample_size_history.append(next_sample_size)
+        sample_increase_events.append({
+            "iteration": counter,
+            "previous_sample_size": sample_size_used,
+            "actual_increment": actual_increment,
+            "next_sample_size": next_sample_size,
+            "moving_average_previous": moving_average_previous,
+            "moving_average_recent": moving_average_recent,
+            "relative_improvement": final_relative_improvement,
+            "reason": reason,
+        })
+        solver._multipliers = best_multipliers.copy()
+        solver.multipliers = best_multipliers.copy()
+        solver.model.generate_sample(
+            n_iters,
+            burn_in,
+            multipliers=solver._multipliers,
+            generate_kwargs=generate_kwargs,
+        )
+        this_constraints = estimate_constraints()
+        current_error = this_constraints - constraints
+        current_score, _, _ = error_metrics(current_error)
+        moving_max_errors.clear()
+        moving_average_previous = np.nan
+        moving_average_recent = np.nan
+        final_relative_improvement = np.nan
+        return True
+
+    while True:
+        sample_size_used = int(solver.model.sampleSize)
+        base_multipliers = solver._multipliers.copy()
+        base_constraints = this_constraints.copy()
+        base_error = current_error.copy()
+        base_score = current_score
+        base_learn_params = mch_schedule(counter, sample_size_used)
+        base_sample = solver.model.sample
+        accepted = None
+        interrupted = False
+        last_rejected_score = base_score
+
+        for attempt_idx in range(1, max_attempts_per_iteration + 1):
+            local_learn_params, attempt_scale = learning_params_for_attempt(
+                base_learn_params,
+                attempt_idx,
+            )
+            solver._multipliers = base_multipliers.copy()
+            solver.multipliers = base_multipliers.copy()
+            solver.model.sample = base_sample
+            print_attempt_status(counter + 1, attempt_idx)
+            try:
+                predicted_constraints = solver.learn_parameters_mch(
+                    base_constraints,
+                    constraints,
+                    **local_learn_params,
+                )
+                predicted_error = predicted_constraints - constraints
+                predicted_score, predicted_error_norm, predicted_max_error = error_metrics(predicted_error)
+                if predicted_score >= base_score * pre_mc_reject_margin:
+                    pre_mc_rejection_events.append({
+                        "iteration": counter + 1,
+                        "attempt": attempt_idx,
+                        "sample_size": sample_size_used,
+                        "attempt_scale": attempt_scale,
+                        "predicted_score": predicted_score,
+                        "base_score": base_score,
+                        "predicted_error_norm": predicted_error_norm,
+                        "predicted_max_error": predicted_max_error,
+                    })
+                    last_rejected_score = predicted_score
+                    continue
+
+                solver.model.generate_sample(
+                    n_iters,
+                    burn_in,
+                    multipliers=solver._multipliers,
+                    generate_kwargs=generate_kwargs,
+                )
+                candidate_constraints = estimate_constraints()
+            except KeyboardInterrupt:
+                interrupted = True
+                stop_reason = "manual_interrupt"
+                errflag = 3
+                clear_attempt_status()
+                print(
+                    "  [MCH] Interrupção manual recebida. "
+                    "Descartando a tentativa incompleta e restaurando a melhor iteração concluída.",
+                    flush=True,
+                )
+                break
+
+            candidate_error = candidate_constraints - constraints
+            candidate_score, candidate_error_norm, candidate_max_error = error_metrics(candidate_error)
+            if candidate_score < base_score:
+                accepted = {
+                    "attempt": attempt_idx,
+                    "attempt_scale": attempt_scale,
+                    "learn_params": local_learn_params,
+                    "constraints": candidate_constraints,
+                    "error": candidate_error,
+                    "score": candidate_score,
+                    "error_norm": candidate_error_norm,
+                    "max_error": candidate_max_error,
+                    "multipliers": solver._multipliers.copy(),
+                }
+                break
+
+            backtracking_events.append({
+                "iteration": counter + 1,
+                "attempt": attempt_idx,
+                "sample_size": sample_size_used,
+                "attempt_scale": attempt_scale,
+                "candidate_score": candidate_score,
+                "base_score": base_score,
+                "candidate_error_norm": candidate_error_norm,
+                "candidate_max_error": candidate_max_error,
+                "bad_chain_enabled": bad_chain_enabled,
+                "backtracking_strategy": backtracking_strategy,
+            })
+            last_rejected_score = candidate_score
+
+        if interrupted:
+            break
+
+        clear_attempt_status()
+        if accepted is None:
+            failed_iteration = counter + 1
+            solver._multipliers = base_multipliers.copy()
+            solver.multipliers = base_multipliers.copy()
+            solver.model.sample = base_sample
+            this_constraints = base_constraints
+            current_error = base_error
+            current_score = base_score
+            no_improvement_events.append({
+                "iteration": counter + 1,
+                "sample_size": sample_size_used,
+                "score": base_score,
+                "last_rejected_score": last_rejected_score,
+                "bad_chain_enabled": bad_chain_enabled,
+                "backtracking_strategy": backtracking_strategy,
+            })
+            if aumentar_amostra_apos_backtracking("backtracking_sem_melhora"):
+                now = time.time()
+                print(
+                    f"  [MCH] Iteracao {failed_iteration} | "
+                    f"sem melhora em {max_attempts_per_iteration} tentativas | "
+                    f"amostra {sample_size_used:,}->{int(solver.model.sampleSize):,} | "
+                    f"melhor_global={best_iteration} | "
+                    f"total={now - mch_start:.1f}s",
+                    flush=True,
+                )
+                last_report_time = now
+                learn_params = mch_schedule(counter, int(solver.model.sampleSize))
+                continue
+            now = time.time()
+            print(
+                f"  [MCH] Iteracao {failed_iteration} | "
+                f"sem melhora em {max_attempts_per_iteration} tentativas | "
+                f"amostra={sample_size_used:,} | "
+                f"sem novo sample | "
+                f"total={now - mch_start:.1f}s",
+                flush=True,
+            )
+            stop_reason = "no_improvement"
+            errflag = 2
+            break
+
+        solver._multipliers = accepted["multipliers"].copy()
+        solver.multipliers = accepted["multipliers"].copy()
+        this_constraints = accepted["constraints"]
+        current_error = accepted["error"]
+        current_score = accepted["score"]
+        counter += 1
+
+        error = current_error
+        errors.append(error)
+        abs_error = np.abs(error)
+        score = accepted["score"]
+        error_norm = accepted["error_norm"]
+        max_error = accepted["max_error"]
+
+        if score < best_score:
+            best_score = score
+            best_error_norm = error_norm
+            best_max_error = max_error
+            best_iteration = counter
+            best_error = error.copy()
+            best_multipliers = solver._multipliers.copy()
+            best_sample_size = sample_size_used
+            best_updates.append({
+                "iteration": best_iteration,
+                "score": best_score,
+                "error_norm": best_error_norm,
+                "max_error": best_max_error,
+                "sample_size": best_sample_size,
+            })
+
+        moving_max_errors.append(max_error)
+        moving_average_previous = np.nan
+        moving_average_recent = float(np.mean(moving_max_errors[-moving_average_window:]))
+        final_relative_improvement = np.nan
+        if len(moving_max_errors) >= 2 * moving_average_window:
+            moving_average_previous = float(np.mean(
+                moving_max_errors[-2 * moving_average_window:-moving_average_window]
+            ))
+            final_relative_improvement = (
+                (moving_average_previous - moving_average_recent)
+                / max(moving_average_previous, np.finfo(float).eps)
+            )
+
+        now = time.time()
+        improvement_text = (
+            "n/a"
+            if not np.isfinite(final_relative_improvement)
+            else f"{final_relative_improvement * 100:+.1f}%"
+        )
+        print(
+            f"  [MCH] Iteracao {counter} | "
+            f"max|erro|={max_error:.5f} | "
+            f"||erro||={error_norm:.5f} | "
+            f"dentro_tol={np.mean(abs_error < tol) * 100:.1f}% | "
+            f"media_movel={moving_average_recent:.5f} | "
+            f"melhoria_media={improvement_text} | "
+            f"amostra={sample_size_used:,} | "
+            f"tentativas={accepted['attempt']} | escala={accepted['attempt_scale']:.3g} | "
+            f"etapa={now - last_report_time:.1f}s | "
+            f"total={now - mch_start:.1f}s",
+            flush=True,
+        )
+        last_report_time = now
+
+        if error_norm < tol_norm and np.all(abs_error < tol):
+            stop_reason = "converged"
+            errflag = 0
+            break
+        if counter >= maxiter:
+            stop_reason = "maxiter"
+            errflag = 1
+            break
+
+        learn_params = mch_schedule(counter, int(solver.model.sampleSize))
+
+    last_error = errors[-1].copy()
+    last_error_norm = float(np.linalg.norm(last_error))
+    last_max_error = float(np.max(np.abs(last_error)))
+    last_iteration = counter
+    solver._multipliers = best_multipliers.copy()
+    solver.multipliers = best_multipliers.copy()
+    if not use_sparse and stop_reason != "manual_interrupt":
+        solver.model.generate_sample(
+            n_iters,
+            burn_in,
+            multipliers=solver.multipliers,
+            generate_kwargs=generate_kwargs,
+        )
+
+    selected_multipliers = (
+        solver.multipliers[parameter_ix] if use_sparse else solver.multipliers.copy()
+    )
+    run_info = {
+        "stop_reason": stop_reason,
+        "converged_formally": stop_reason == "converged",
+        "manual_interrupt": stop_reason == "manual_interrupt",
+        "plateau_triggered": bool(sample_increase_events),
+        "plateau_rel_improvement": plateau_rel_improvement,
+        "plateau_patience": plateau_patience,
+        "plateau_max_error": plateau_max_error,
+        "plateau_streak": 0,
+        "final_relative_improvement": float(final_relative_improvement),
+        "final_sample_size": int(solver.model.sampleSize),
+        "moving_average_window": moving_average_window,
+        "sample_increment": sample_increment,
+        "sample_growth_factor": sample_growth_factor,
+        "max_sample_size": max_sample_size,
+        "sample_schedule": sample_schedule,
+        "sample_size_history": sample_size_history,
+        "sample_increases": len(sample_increase_events),
+        "sample_increase_events": sample_increase_events,
+        "bad_chain_enabled": bad_chain_enabled,
+        "backtracking_strategy": backtracking_strategy,
+        "max_attempts_per_iteration": max_attempts_per_iteration,
+        "attempt_decay": attempt_decay,
+        "pre_mc_reject_margin": pre_mc_reject_margin,
+        "backtracking_rejections": len(backtracking_events),
+        "backtracking_events": backtracking_events,
+        "pre_mc_rejections": len(pre_mc_rejection_events),
+        "pre_mc_rejection_events": pre_mc_rejection_events,
+        "no_improvement_count": len(no_improvement_events),
+        "no_improvement_events": no_improvement_events,
+        "best_iteration": best_iteration,
+        "best_score": best_score,
+        "best_error": best_error,
+        "best_error_norm": best_error_norm,
+        "best_error_max_abs": best_max_error,
+        "best_sample_size": best_sample_size,
+        "best_updates": best_updates,
+        "last_iteration": last_iteration,
+        "last_error_norm": last_error_norm,
+        "last_error_max_abs": last_max_error,
+        "elapsed_s": float(time.time() - mch_start),
+    }
+    return selected_multipliers, errflag, np.vstack(errors), run_info
+
+
+def _resolver_mch_loop_fixo(
+        solver,
+        constraints: np.ndarray,
+        initial_selected: np.ndarray,
+        use_sparse: bool,
+        parameter_ix: np.ndarray | None,
+        tol: float,
+        tol_norm: float,
+        n_iters: int,
+        burn_in: int,
+        maxiter: int,
+        mch_schedule,
+        generate_kwargs: dict | None = None):
+    """
+    Executa MCH em modo fixo: uma atualização MCH e uma nova amostra por
+    iteração, sem backtracking, sem subtentativas e sem aumento automático de
+    sample_size.
+    """
+    generate_kwargs = generate_kwargs or {}
+    constraints = np.asarray(constraints, dtype=np.float64)
+    initial_selected = np.asarray(initial_selected, dtype=np.float64)
+
+    if use_sparse:
+        solver._multipliers = solver.fill_in(initial_selected.copy())
+    else:
+        solver._multipliers = initial_selected.copy()
+    solver.multipliers = solver._multipliers.copy()
+
+    def estimate_constraints() -> np.ndarray:
+        return estimar_observaveis_solver_em_chunks(
+            solver,
+            use_sparse=use_sparse,
+            parameter_ix=parameter_ix,
+            chunk_size=10_000,
+        )
+
+    def error_metrics(error: np.ndarray) -> tuple[float, float, float]:
+        abs_error = np.abs(error)
+        error_norm = float(np.linalg.norm(error))
+        max_error = float(abs_error.max())
+        score = max(
+            max_error / max(tol, np.finfo(float).eps),
+            error_norm / max(tol_norm, np.finfo(float).eps),
+        )
+        return float(score), error_norm, max_error
+
+    mch_start = time.time()
+    last_report_time = mch_start
+    sample_size_used = int(solver.model.sampleSize)
+
+    solver.model.generate_sample(
+        n_iters,
+        burn_in,
+        multipliers=solver._multipliers,
+        generate_kwargs=generate_kwargs,
+    )
+    this_constraints = estimate_constraints()
+    current_error = this_constraints - constraints
+    errors = [current_error.copy()]
+    current_score, current_error_norm, current_max_error = error_metrics(current_error)
+
+    best_score = current_score
+    best_error = current_error.copy()
+    best_error_norm = current_error_norm
+    best_max_error = current_max_error
+    best_iteration = 0
+    best_multipliers = solver._multipliers.copy()
+    best_sample_size = sample_size_used
+    best_updates = [{
+        "iteration": 0,
+        "score": best_score,
+        "error_norm": best_error_norm,
+        "max_error": best_max_error,
+        "sample_size": best_sample_size,
+    }]
+
+    print(
+        f"  [MCH] Iteracao inicial | "
+        f"max|erro|={current_max_error:.5f} | "
+        f"||erro||={current_error_norm:.5f} | "
+        f"dentro_tol={np.mean(np.abs(current_error) < tol) * 100:.1f}% | "
+        f"amostra={sample_size_used:,} | "
+        f"total={time.time() - mch_start:.1f}s",
+        flush=True,
+    )
+
+    stop_reason = "maxiter"
+    errflag = 1
+    completed_iterations = 0
+    converged_iteration = None
+
+    print(
+        "  [MCH] Execucao fixa: uma atualizacao e uma amostragem por iteracao. "
+        "Pressione Ctrl+C para usar a melhor iteracao concluida.",
+        flush=True,
+    )
+
+    for counter in range(1, maxiter + 1):
+        learn_params = mch_schedule(counter - 1, sample_size_used)
+        try:
+            solver.learn_parameters_mch(this_constraints, constraints, **learn_params)
+            solver.model.generate_sample(
+                n_iters,
+                burn_in,
+                multipliers=solver._multipliers,
+                generate_kwargs=generate_kwargs,
+            )
+            this_constraints = estimate_constraints()
+        except KeyboardInterrupt:
+            stop_reason = "manual_interrupt"
+            errflag = 3
+            print(
+                "  [MCH] Interrupção manual recebida. "
+                "Restaurando a melhor iteração concluída.",
+                flush=True,
+            )
+            break
+
+        current_error = this_constraints - constraints
+        errors.append(current_error.copy())
+        current_score, current_error_norm, current_max_error = error_metrics(current_error)
+        completed_iterations = counter
+
+        if current_score < best_score:
+            best_score = current_score
+            best_error = current_error.copy()
+            best_error_norm = current_error_norm
+            best_max_error = current_max_error
+            best_iteration = counter
+            best_multipliers = solver._multipliers.copy()
+            best_sample_size = sample_size_used
+            best_updates.append({
+                "iteration": best_iteration,
+                "score": best_score,
+                "error_norm": best_error_norm,
+                "max_error": best_max_error,
+                "sample_size": best_sample_size,
+            })
+
+        abs_error = np.abs(current_error)
+        now = time.time()
+        print(
+            f"  [MCH] Iteracao {counter}/{maxiter} | "
+            f"max|erro|={current_max_error:.5f} | "
+            f"||erro||={current_error_norm:.5f} | "
+            f"dentro_tol={np.mean(abs_error < tol) * 100:.1f}% | "
+            f"amostra={sample_size_used:,} | "
+            f"etapa={now - last_report_time:.1f}s | "
+            f"total={now - mch_start:.1f}s",
+            flush=True,
+        )
+        last_report_time = now
+
+        if converged_iteration is None and current_error_norm < tol_norm and np.all(abs_error < tol):
+            converged_iteration = counter
+            print(
+                f"  [MCH] Critério formal atingido na iteração {counter}; "
+                f"continuando até {maxiter} iterações como configurado.",
+                flush=True,
+            )
+
+    if completed_iterations >= maxiter and converged_iteration is not None:
+        stop_reason = "converged"
+        errflag = 0
+
+    solver._multipliers = best_multipliers.copy()
+    solver.multipliers = best_multipliers.copy()
+
+    selected_multipliers = (
+        solver.multipliers[parameter_ix] if use_sparse else solver.multipliers.copy()
+    )
+    run_info = {
+        "stop_reason": stop_reason,
+        "converged_formally": converged_iteration is not None,
+        "converged_iteration": converged_iteration,
+        "manual_interrupt": stop_reason == "manual_interrupt",
+        "fixed_iterations": True,
+        "backtracking_strategy": "none",
+        "plateau_triggered": False,
+        "plateau_rel_improvement": np.nan,
+        "plateau_patience": np.nan,
+        "plateau_max_error": np.nan,
+        "plateau_streak": 0,
+        "final_relative_improvement": np.nan,
+        "final_sample_size": sample_size_used,
+        "moving_average_window": np.nan,
+        "sample_increment": np.nan,
+        "sample_growth_factor": np.nan,
+        "max_sample_size": sample_size_used,
+        "sample_schedule": [sample_size_used],
+        "sample_size_history": [sample_size_used],
+        "sample_increases": 0,
+        "sample_increase_events": [],
+        "bad_chain_enabled": False,
+        "max_attempts_per_iteration": 1,
+        "attempt_decay": np.nan,
+        "pre_mc_reject_margin": np.nan,
+        "backtracking_rejections": 0,
+        "backtracking_events": [],
+        "pre_mc_rejections": 0,
+        "pre_mc_rejection_events": [],
+        "no_improvement_count": 0,
+        "no_improvement_events": [],
+        "best_iteration": best_iteration,
+        "best_score": best_score,
+        "best_error": best_error,
+        "best_error_norm": best_error_norm,
+        "best_error_max_abs": best_max_error,
+        "best_sample_size": best_sample_size,
+        "best_updates": best_updates,
+        "last_iteration": completed_iterations,
+        "last_error_norm": current_error_norm,
+        "last_error_max_abs": current_max_error,
+        "elapsed_s": float(time.time() - mch_start),
+    }
+    return selected_multipliers, errflag, np.vstack(errors), run_info
 
 
 def resolver_mch_coniii(sample: np.ndarray,
                         initial_guess: np.ndarray,
                         adjacency_mask: np.ndarray | None = None,
                         sample_size: int = 100_000,
-                        maxiter: int = 100,
+                        maxiter: int = 200,
                         n_iters: int | None = None,
                         burn_in: int | None = None,
-                        param_bound: float = 5.0) -> tuple[np.ndarray, int, np.ndarray]:
+                        param_bound: float = 5.0,
+                        plateau_rel_improvement: float = 0.0,
+                        plateau_patience: int = 4,
+                        plateau_max_error: float | None = None,
+                        sample_increment: int = 100_000,
+                        sample_growth_factor: float = 1.5,
+                        max_sample_size: int = 2_500_000,
+                        learning_profile: str = "adaptive_samples"
+                        ) -> tuple[np.ndarray, int, np.ndarray, dict]:
     """
     Resolve o modelo pairwise por Monte Carlo Histogram (MCH) usando ConIII.
 
@@ -739,41 +1969,72 @@ def resolver_mch_coniii(sample: np.ndarray,
     solver = solver_cls(**solver_kwargs)
     constraints = solver.constraints[parameter_ix] if use_sparse else solver.constraints
     initial_selected = initial_guess[parameter_ix] if use_sparse else initial_guess
+    learning_profile = normalizar_perfil_mch(learning_profile)
+    learning_label = MCH_LEARNING_PROFILES[learning_profile]["label"]
 
-    def mch_schedule(iteration: int):
-        if iteration < 5:
-            learn = {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 25}
-            size = sample_size
-        elif iteration < 12:
-            learn = {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 30}
-            size = min(sample_size * 2, 200_000)
-        else:
-            learn = {"maxdlamda": 0.08, "maxdlamdaNorm": 0.5, "eta": 0.05, "maxLearningSteps": 40}
-            size = min(sample_size * 3, 300_000)
-        return learn, int(size)
+    def mch_schedule(iteration: int, sample_size_current: int):
+        return parametros_mch_por_perfil(learning_profile, sample_size_current)
 
     tol_empirico = 3.0 / np.sqrt(R)
     tol_mc = 3.0 / np.sqrt(sample_size)
-    tol = min(tol_empirico, tol_mc, 0.005)
+    tol_floor = 0.001
+    tol = min(tol_empirico, min(tol_mc, tol_floor))
     tol_norm = tol * np.sqrt(len(initial_selected))
+    plateau_rel_improvement = max(0.0, float(plateau_rel_improvement))
+    plateau_patience = max(1, int(plateau_patience))
+    plateau_max_error = (
+        None
+        if plateau_max_error is None
+        else max(tol, float(plateau_max_error))
+    )
+    sample_increment = max(1, int(sample_increment))
+    sample_growth_factor = max(1.0, float(sample_growth_factor))
+    max_sample_size = max(sample_size, int(max_sample_size))
+    sample_schedule = sorted({
+        s for s in [100_000, 200_000, 400_000, 800_000, 1_600_000, 2_500_000]
+        if s >= sample_size and s <= max_sample_size
+    } | {sample_size, max_sample_size})
     print(
         f"  [MCH] Tolerancia ajustada: tol={tol:.5f} "
-        f"(empirica={tol_empirico:.5f}, MC={tol_mc:.5f}); maxiter={maxiter}."
+        f"(empirica={tol_empirico:.5f}, MC inicial={tol_mc:.5f}, piso={tol_floor:.5f}); "
+        f"maxiter={maxiter}."
     )
+    print(
+        f"  [MCH] Execucao fixa: sample_size={sample_size:,}, "
+        f"iteracoes={maxiter}, sem backtracking e sem aumento automatico de amostra."
+    )
+    print(f"  [MCH] Perfil do solver: {learning_label}.")
+    if learning_profile == "adaptive_samples":
+        print(
+            "  [MCH] Fases por amostra: <200k agressivo | "
+            "200k-499k medio | 500k-1.19M conservador | >=1.2M fino."
+        )
+    else:
+        learn_preview = parametros_mch_por_perfil(learning_profile, sample_size)
+        print(
+            "  [MCH] Parametros fixos: "
+            f"maxdlamda={learn_preview['maxdlamda']}, "
+            f"maxdlamdaNorm={learn_preview['maxdlamdaNorm']}, "
+            f"eta={learn_preview['eta']}, "
+            f"maxLearningSteps={learn_preview['maxLearningSteps']}."
+        )
 
-    multipliers_selected, errflag, errors = solver.solve(
-        initial_guess=initial_selected,
+    multipliers_selected, errflag, errors, run_info = _resolver_mch_loop_fixo(
+        solver=solver,
         constraints=constraints,
+        initial_selected=initial_selected,
+        use_sparse=use_sparse,
+        parameter_ix=parameter_ix,
         tol=tol,
-        tolNorm=tol_norm,
+        tol_norm=tol_norm,
         n_iters=n_iters,
         burn_in=burn_in,
         maxiter=maxiter,
-        custom_convergence_f=mch_schedule,
-        iprint=False,
-        full_output=True,
+        mch_schedule=mch_schedule,
         generate_kwargs={"parallel": False},
     )
+    run_info["learning_profile"] = learning_profile
+    run_info["learning_profile_label"] = learning_label
 
     if use_sparse:
         multipliers = solver.multipliers.copy()
@@ -786,17 +2047,32 @@ def resolver_mch_coniii(sample: np.ndarray,
         J[~preparar_mascara_adjacencia(adjacency_mask, N)] = 0.0
         multipliers = np.concatenate([multipliers[:N], pack_J(J)])
 
-    final_error = errors[-1] if len(errors) else np.array([])
+    final_error = np.asarray(run_info.get("best_error", []), dtype=np.float64)
     if final_error.size:
+        final_abs_error = np.abs(final_error)
         print(
-            f"  [MCH] errflag={errflag} | "
+            f"  [MCH] Melhor iteracao={run_info['best_iteration']} "
+            f"de {max(0, len(errors) - 1)} | "
+            f"maxiter_configurado={maxiter} | "
+            f"errflag={errflag} | "
             f"||erro||={np.linalg.norm(final_error):.5f} | "
-            f"max|erro|={np.max(np.abs(final_error)):.5f}"
+            f"max|erro|={final_abs_error.max():.5f} | "
+            f"dentro_tol={np.mean(final_abs_error < tol) * 100:.1f}% | "
+            f"amostra={run_info['best_sample_size']:,} | "
+            f"motivo={run_info['stop_reason']} | "
+            f"tempo={run_info['elapsed_s']:.1f}s"
         )
-    if errflag != 0:
+    if run_info["stop_reason"] == "maxiter":
         print("  [MCH] Aviso: maxiter atingido antes do criterio formal de convergencia.")
+    elif run_info["stop_reason"] == "manual_interrupt":
+        print("  [MCH] Interrupção manual aceita; continuando com validação, tripletos e P(Q).")
+    if run_info["best_iteration"] != run_info["last_iteration"]:
+        print(
+            f"  [MCH] Retornando parametros da melhor iteracao observada, "
+            f"nao da ultima ({run_info['last_iteration']})."
+        )
 
-    return multipliers, errflag, errors
+    return multipliers, errflag, errors, run_info
 
 def calcular_rmse_medias(spin_matrix: np.ndarray, h_inferido: np.ndarray) -> float:
     """
@@ -888,9 +2164,14 @@ def exibir_avaliacao_schneidman(rmse_indep: float, rmse_pairwise: float, R: int,
 
 def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
                    adjacency_mask: np.ndarray | None = None,
-                   metodo_inferencia: str = "pseudo",
+                   metodo_inferencia: str = "auto",
                    mch_sample_size: int = 100_000,
-                   mch_maxiter: int = 100) -> dict:
+                   mch_maxiter: int = 200,
+                   mch_plateau_rel_improvement: float = 0.0,
+                   mch_plateau_patience: int = 4,
+                   mch_plateau_max_error: float | None = None,
+                   mch_learning_profile: str = "adaptive_samples",
+                   mch_interactive_continue: bool = False) -> dict:
     # ── Orientação da matriz ─────────────────────────────────────────────────
     # create_ising_matrix_from_sets SEMPRE gera (users × keywords).
     # ConIII espera (R, N) = (keywords × users).
@@ -931,9 +2212,11 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
         pseudo_tuning_info = {}
         exact_info = {}
 
-        if metodo_escolhido == "mch":
-            metodo_str = "MCH"
-            initial_guess, pseudo_tuning_info = auto_tune_pseudo_warm_start(
+        if metodo_escolhido in {"mch", "mch_custom"}:
+            custom_mch = metodo_escolhido == "mch_custom"
+            metodo_str = "MCH-Custom" if custom_mch else "MCH"
+            log_prefix = "[MCH-Custom]" if custom_mch else "[MCH]"
+            initial_guess, pseudo_tuning_info = torneio_warm_starts(
                 spin_matrix,
                 initial_guess=initial_guess_base,
                 adjacency_mask=adjacency_mask,
@@ -941,21 +2224,147 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
                 param_bound=param_bound,
                 enabled=True,
             )
-            multipliers, errflag, mch_errors = resolver_mch_coniii(
-                spin_matrix,
-                initial_guess=initial_guess,
-                adjacency_mask=adjacency_mask,
-                sample_size=mch_sample_size,
-                maxiter=mch_maxiter,
-                param_bound=param_bound
+
+            def pedir_int_mch(rotulo: str, atual: int, minimo: int = 1) -> int:
+                while True:
+                    valor = input(f"  {log_prefix} {rotulo} [{atual:,}]: ").strip()
+                    if not valor:
+                        return int(atual)
+                    try:
+                        parsed = int(valor.replace(".", "").replace(",", ""))
+                        if parsed >= minimo:
+                            return parsed
+                    except ValueError:
+                        pass
+                    print(f"  {log_prefix} Valor invalido para {rotulo}. Use inteiro >= {minimo}.")
+
+            def pedir_perfil_mch(atual: str) -> str:
+                atual_label = MCH_LEARNING_PROFILES[normalizar_perfil_mch(atual)]["label"]
+                print(f"\n  {log_prefix} Perfil para a próxima rodada:")
+                print("    [1] Agressiva")
+                print("    [2] Média")
+                print("    [3] Conservador")
+                print("    [4] Adaptado ao número de amostras")
+                print("    [5] Muito agressiva")
+                valor = input(f"  Escolha o perfil [atual: {atual_label}]: ").strip().lower()
+                if not valor:
+                    return normalizar_perfil_mch(atual)
+                return normalizar_perfil_mch(valor)
+
+            all_mch_errors = []
+            segment_infos = []
+            current_initial = initial_guess.copy()
+            best_global_score = np.inf
+            best_global_multipliers = None
+            best_global_error = None
+            best_global_info = None
+            current_sample_size = int(mch_sample_size)
+            current_maxiter = int(mch_maxiter)
+            current_profile = normalizar_perfil_mch(mch_learning_profile)
+            segment_idx = 0
+
+            while True:
+                segment_idx += 1
+                print(
+                    f"\n  {log_prefix} Rodada {segment_idx}: "
+                    f"perfil={MCH_LEARNING_PROFILES[current_profile]['label']}, "
+                    f"sample_size={current_sample_size:,}, iteracoes={current_maxiter}."
+                )
+                if custom_mch:
+                    from src.mch_custom import resolver_mch_custom
+
+                    multipliers_segment, errflag_segment, mch_errors_segment, mch_run_info_segment = resolver_mch_custom(
+                        spin_matrix,
+                        initial_guess=current_initial,
+                        adjacency_mask=adjacency_mask,
+                        sample_size=current_sample_size,
+                        maxiter=current_maxiter,
+                        param_bound=param_bound,
+                        learning_profile=current_profile,
+                    )
+                else:
+                    multipliers_segment, errflag_segment, mch_errors_segment, mch_run_info_segment = resolver_mch_coniii(
+                        spin_matrix,
+                        initial_guess=current_initial,
+                        adjacency_mask=adjacency_mask,
+                        sample_size=current_sample_size,
+                        maxiter=current_maxiter,
+                        param_bound=param_bound,
+                        plateau_rel_improvement=mch_plateau_rel_improvement,
+                        plateau_patience=mch_plateau_patience,
+                        plateau_max_error=mch_plateau_max_error,
+                        learning_profile=current_profile,
+                    )
+                all_mch_errors.append(mch_errors_segment)
+                segment_infos.append(mch_run_info_segment)
+
+                segment_score = float(mch_run_info_segment.get("best_score", np.inf))
+                if segment_score < best_global_score or best_global_multipliers is None:
+                    best_global_score = segment_score
+                    best_global_multipliers = multipliers_segment.copy()
+                    best_global_error = np.asarray(
+                        mch_run_info_segment.get(
+                            "best_error",
+                            mch_errors_segment[-1] if len(mch_errors_segment) else [],
+                        ),
+                        dtype=np.float64,
+                    )
+                    best_global_info = dict(mch_run_info_segment)
+
+                checkpoint_prefix = "mch_custom" if custom_mch else "mch"
+                checkpoint_path = f"{checkpoint_prefix}_melhor_{session_id}_rodada_{segment_idx}.npy"
+                np.save(checkpoint_path, best_global_multipliers)
+                print(
+                    f"  {log_prefix} Melhor resultado salvo em: {checkpoint_path} | "
+                    f"melhor_score={best_global_score:.5f}"
+                )
+
+                current_initial = best_global_multipliers.copy()
+                if not mch_interactive_continue:
+                    break
+
+                continuar = input(
+                    f"\n  {log_prefix} Continuar com novas configurações antes das figuras? (s/n) [n]: "
+                ).strip().lower()
+                if continuar not in {"s", "sim", "y", "yes"}:
+                    break
+
+                current_profile = pedir_perfil_mch(current_profile)
+                current_sample_size = pedir_int_mch("Nova quantidade de amostras por iteracao", current_sample_size, 1000)
+                current_maxiter = pedir_int_mch("Nova quantidade de iteracoes", current_maxiter, 1)
+
+            multipliers = best_global_multipliers
+            errflag = int(best_global_info.get("errflag", errflag_segment)) if best_global_info else errflag_segment
+            mch_errors = np.vstack(all_mch_errors) if all_mch_errors else np.zeros((0, 0))
+            total_mch_iterations = int(sum(max(0, len(segment_errors) - 1) for segment_errors in all_mch_errors))
+            mch_run_info = dict(best_global_info or {})
+            mch_run_info.update({
+                "method": metodo_escolhido,
+                "method_label": metodo_str,
+                "interactive_continue": bool(mch_interactive_continue),
+                "segments": segment_idx,
+                "segment_infos": segment_infos,
+                "segment_sample_sizes": [int(info.get("best_sample_size", np.nan)) for info in segment_infos],
+                "segment_iterations": [int(info.get("last_iteration", 0)) for info in segment_infos],
+                "total_segment_iterations": total_mch_iterations,
+                "best_global_score": best_global_score,
+                "best_error": best_global_error,
+                "best_score": best_global_score,
+                "last_learning_profile": current_profile,
+                "last_learning_profile_label": MCH_LEARNING_PROFILES[current_profile]["label"],
+            })
+            selected_error = np.asarray(
+                best_global_error if best_global_error is not None else [],
+                dtype=np.float64,
             )
             mch_info = {
                 "errflag": errflag,
-                "n_iter": max(0, len(mch_errors) - 1),
-                "final_error_norm": float(np.linalg.norm(mch_errors[-1])) if len(mch_errors) else np.nan,
-                "final_error_max_abs": float(np.max(np.abs(mch_errors[-1]))) if len(mch_errors) else np.nan,
-                "sample_size": mch_sample_size,
-                "maxiter": mch_maxiter,
+                "n_iter": total_mch_iterations,
+                "final_error_norm": float(np.linalg.norm(selected_error)) if selected_error.size else np.nan,
+                "final_error_max_abs": float(np.max(np.abs(selected_error))) if selected_error.size else np.nan,
+                "sample_size": int(mch_run_info.get("best_sample_size", current_sample_size)),
+                "maxiter": current_maxiter,
+                **mch_run_info,
             }
 
         elif metodo_escolhido == "pseudo":
@@ -1021,7 +2430,7 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
             "rmse_medias": rmse_pairwise,
             "tempo_s": tempo_s,
             "diagnostico": diagnostico,
-            "mch_info": mch_info if metodo_str == "MCH" else None,
+            "mch_info": mch_info or None,
             "pseudo_tuning_info": pseudo_tuning_info,
             "exact_info": exact_info if metodo_str == "Enumerate-Exact" else None,
         }
@@ -1034,7 +2443,7 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
         tempo_s = time.time() - t0
         print(f"  [Erro] Falha: {e}")
         if metodo_str is None:
-            metodo_str = "Pseudo-Likelihood" if N > 30 else "Enumerate"
+            metodo_str = "MCH" if N > 20 else "Enumerate"
         resultados = {
             metodo_str: {
                 "metodo": metodo_str, 
@@ -1073,6 +2482,7 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
             print(f"{nome:<20} | {rmse:<8.5f} | {dados['tempo_s']:<8.1f} | {viab_str:<20}")
             mch_row = dados.get("mch_info") or {}
             pseudo_row = dados.get("pseudo_tuning_info") or {}
+            warm_metrics = pseudo_row.get("selected_metrics") or {}
             exact_row = dados.get("exact_info") or {}
             
             tabela.append({
@@ -1092,6 +2502,75 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
                 "mch_final_error_max_abs": mch_row.get("final_error_max_abs", np.nan),
                 "mch_sample_size": mch_row.get("sample_size", np.nan),
                 "mch_maxiter": mch_row.get("maxiter", np.nan),
+                "mch_stop_reason": mch_row.get("stop_reason", ""),
+                "mch_solver": mch_row.get("solver", ""),
+                "mch_backend": mch_row.get("backend", ""),
+                "mch_learning_profile": mch_row.get("learning_profile", ""),
+                "mch_learning_profile_label": mch_row.get("learning_profile_label", ""),
+                "mch_converged_formally": mch_row.get("converged_formally", np.nan),
+                "mch_manual_interrupt": mch_row.get("manual_interrupt", np.nan),
+                "mch_plateau_triggered": mch_row.get("plateau_triggered", np.nan),
+                "mch_plateau_rel_improvement": mch_row.get("plateau_rel_improvement", np.nan),
+                "mch_plateau_patience": mch_row.get("plateau_patience", np.nan),
+                "mch_plateau_max_error": mch_row.get("plateau_max_error", np.nan),
+                "mch_plateau_streak": mch_row.get("plateau_streak", np.nan),
+                "mch_final_relative_improvement": mch_row.get("final_relative_improvement", np.nan),
+                "mch_final_sample_size": mch_row.get("final_sample_size", np.nan),
+                "mch_moving_average_window": mch_row.get("moving_average_window", np.nan),
+                "mch_sample_increment": mch_row.get("sample_increment", np.nan),
+                "mch_sample_growth_factor": mch_row.get("sample_growth_factor", np.nan),
+                "mch_max_sample_size": mch_row.get("max_sample_size", np.nan),
+                "mch_sample_schedule": str(mch_row.get("sample_schedule", [])),
+                "mch_sample_increases": mch_row.get("sample_increases", np.nan),
+                "mch_sample_size_history": str(mch_row.get("sample_size_history", [])),
+                "mch_bad_chain_enabled": mch_row.get("bad_chain_enabled", np.nan),
+                "mch_backtracking_strategy": mch_row.get("backtracking_strategy", ""),
+                "mch_max_attempts_per_iteration": mch_row.get("max_attempts_per_iteration", np.nan),
+                "mch_attempt_decay": mch_row.get("attempt_decay", np.nan),
+                "mch_pre_mc_reject_margin": mch_row.get("pre_mc_reject_margin", np.nan),
+                "mch_pre_mc_rejections": mch_row.get("pre_mc_rejections", np.nan),
+                "mch_backtracking_rejections": mch_row.get("backtracking_rejections", np.nan),
+                "mch_baseline_resamples": mch_row.get("baseline_resamples", np.nan),
+                "mch_pilot_fraction": mch_row.get("pilot_fraction", np.nan),
+                "mch_pilot_min": mch_row.get("pilot_min", np.nan),
+                "mch_pilot_max": mch_row.get("pilot_max", np.nan),
+                "mch_max_pilot_repeats": mch_row.get("max_pilot_repeats", np.nan),
+                "mch_pilot_accept_margin": mch_row.get("pilot_accept_margin", np.nan),
+                "mch_pilot_reject_margin": mch_row.get("pilot_reject_margin", np.nan),
+                "mch_pilot_total_evaluations": mch_row.get("pilot_total_evaluations", np.nan),
+                "mch_pilot_extra_evaluations": mch_row.get("pilot_extra_evaluations", np.nan),
+                "mch_pilot_uncertain_attempts": mch_row.get("pilot_uncertain_attempts", np.nan),
+                "mch_attempt_scales": str(mch_row.get("attempt_scales", [])),
+                "mch_subattempts_per_scale": mch_row.get("subattempts_per_scale", np.nan),
+                "mch_scale_evaluations": mch_row.get("scale_evaluations", np.nan),
+                "mch_subattempt_evaluations": mch_row.get("subattempt_evaluations", np.nan),
+                "mch_learning_steps_mean": mch_row.get("mch_learning_steps_mean", np.nan),
+                "mch_learning_steps_last": mch_row.get("mch_learning_steps_last", np.nan),
+                "mch_prediction_distance_last": mch_row.get("mch_prediction_distance_last", np.nan),
+                "mch_delta_norm_last": mch_row.get("mch_delta_norm_last", np.nan),
+                "mch_delta_max_abs_last": mch_row.get("mch_delta_max_abs_last", np.nan),
+                "mch_step_stop_reason_last": mch_row.get("mch_step_stop_reason_last", ""),
+                "mch_no_improvement_count": mch_row.get("no_improvement_count", np.nan),
+                "mch_n_chains": mch_row.get("n_chains", np.nan),
+                "mch_acceptance_rate_mean": mch_row.get("acceptance_rate_mean", np.nan),
+                "mch_acceptance_rate_last": mch_row.get("acceptance_rate_last", np.nan),
+                "mch_best_iteration": mch_row.get("best_iteration", np.nan),
+                "mch_best_score": mch_row.get("best_score", np.nan),
+                "mch_best_error_norm": mch_row.get("best_error_norm", np.nan),
+                "mch_best_error_max_abs": mch_row.get("best_error_max_abs", np.nan),
+                "mch_best_sample_size": mch_row.get("best_sample_size", np.nan),
+                "mch_last_iteration": mch_row.get("last_iteration", np.nan),
+                "mch_last_error_norm": mch_row.get("last_error_norm", np.nan),
+                "mch_last_error_max_abs": mch_row.get("last_error_max_abs", np.nan),
+                "warm_start_selected": pseudo_row.get("selected", ""),
+                "warm_start_score": warm_metrics.get("score", np.nan),
+                "warm_start_pair_rmse": warm_metrics.get("pair_rmse", np.nan),
+                "warm_start_pair_r": warm_metrics.get("pair_r", np.nan),
+                "warm_start_mean_rmse": warm_metrics.get("mean_rmse", np.nan),
+                "warm_start_mc_score": warm_metrics.get("mc_score", np.nan),
+                "warm_start_mc_error_norm": warm_metrics.get("mc_error_norm", np.nan),
+                "warm_start_mc_error_max_abs": warm_metrics.get("mc_error_max_abs", np.nan),
+                "warm_start_n_bound": warm_metrics.get("n_bound", np.nan),
                 "pseudo_tuning_enabled": pseudo_row.get("enabled", False),
                 "pseudo_tuning_rounds": len(pseudo_row.get("history", [])),
                 "pseudo_tuning_final_score": pseudo_row.get("final_score", np.nan),
@@ -1116,18 +2595,25 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
 def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict, 
                   gexf_path: str, node_names: list, session_id: str):
     """
-    Painel Duplo: Covariância empírica e Acoplamentos J via MCH.
+    Figura 2: Covariância empírica, covariância reconstruída e acoplamentos J.
     Aplica filtro topológico substituindo as pontes desconectadas por NaN
     usando a rede GEXF original da comunidade correspondente aos nós (usuários).
     """
-    print("\n[Figura 2] Inicializando geração dos heatmaps lado a lado...")
+    print("\n[Figura 2] Inicializando geração dos 3 heatmaps lado a lado...")
     # Mesma orientação da inferência: linhas = keywords/amostras, colunas = usuários/spins.
     spin_matrix = spin_matrix.T
-    N = spin_matrix.shape[1]
-    
-    # Covariância (diagonal zerada: Cov(σ_i, σ_i) = variância, não é acoplamento)
-    C_emp = np.cov(spin_matrix, rowvar=False)
-    np.fill_diagonal(C_emp, 0.0)
+    R, N = spin_matrix.shape
+
+    def calcular_covariancia_centrada(amostras: np.ndarray) -> np.ndarray:
+        amostras = np.asarray(amostras, dtype=np.float64)
+        if amostras.ndim != 2 or amostras.shape[0] == 0:
+            return np.zeros((N, N), dtype=np.float64)
+        centrado = amostras - amostras.mean(axis=0, keepdims=True)
+        C = (centrado.T @ centrado) / float(amostras.shape[0])
+        np.fill_diagonal(C, 0.0)
+        return C
+
+    C_emp = calcular_covariancia_centrada(spin_matrix)
     
     # Filtro topológico
     aplicar_filtro = False
@@ -1169,37 +2655,83 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
         m_copy[~A_mask] = np.nan
         return m_copy
 
-    C_masked = aplicar_mascara(C_emp)
-    
     # Extrai o primeiro resultado independente do nome do método
     res_vals = list(resultados_inferencia.values())[0] if len(resultados_inferencia) > 0 else {}
+    multipliers = res_vals.get("multipliers")
+
+    C_model = np.full((N, N), np.nan, dtype=np.float64)
+    if multipliers is None or "ERROR" in res_vals:
+        print("  [Aviso] Nenhum modelo válido encontrado. Painel reconstruído ficará vazio.")
+    elif N <= 20:
+        print(f"  [Modelo] Covariância reconstruída por enumeração exata (2^{N} estados).")
+        states, probs = _estados_modelo_exato(multipliers, N)
+        medias_modelo = probs @ states
+        centrado = states - medias_modelo
+        C_model = (centrado * probs[:, None]).T @ centrado
+        np.fill_diagonal(C_model, 0.0)
+    else:
+        mch_info = res_vals.get("mch_info") or {}
+        n_amostras_base = mch_info.get(
+            "best_sample_size",
+            mch_info.get("sample_size", res_vals.get("mch_sample_size", 200_000))
+        )
+        try:
+            n_amostras_fig2 = int(n_amostras_base)
+        except (TypeError, ValueError, OverflowError):
+            n_amostras_fig2 = 200_000
+        n_amostras_fig2 = max(50_000, min(n_amostras_fig2, 200_000))
+        print(
+            "  [Modelo] Covariância reconstruída por Monte Carlo "
+            f"({n_amostras_fig2:,} amostras; N={N})."
+        )
+        amostras_modelo = _amostrar_modelo_metropolis(
+            multipliers,
+            N,
+            n_amostras_fig2,
+            label="covariância reconstruída da Figura 2"
+        )
+        C_model = calcular_covariancia_centrada(amostras_modelo)
+
+    C_emp_masked = aplicar_mascara(C_emp)
+    C_model_masked = aplicar_mascara(C_model)
     J_inf = aplicar_mascara(res_vals.get("J", np.zeros((N, N))))
+
+    cov_vmax = np.nanmax(np.abs(np.stack([
+        np.nan_to_num(C_emp_masked, nan=0.0),
+        np.nan_to_num(C_model_masked, nan=0.0),
+    ])))
+    if not np.isfinite(cov_vmax) or cov_vmax == 0:
+        cov_vmax = 1.0
 
     # Configuração da figura matplotlib
     plt.rcParams.update({'text.color': '#cccccc', 'axes.labelcolor': '#cccccc',
                          'xtick.color': '#cccccc', 'ytick.color': '#cccccc'})
-    fig, axes = plt.subplots(1, 2, figsize=(12, 5), facecolor='#1a1a2e')
+    fig, axes = plt.subplots(1, 3, figsize=(15.5, 5), facecolor='#1a1a2e')
     
     cmap = matplotlib.colormaps.get_cmap('jet').copy()
     cmap.set_bad(color='white')
     
     paineis = [
-        (C_masked, "Covariância Empírica"),
-        (J_inf, "J — Inferido")
+        (C_emp_masked, "Covariância Empírica", cov_vmax),
+        (C_model_masked, "Covariância Reconstruída", cov_vmax),
+        (J_inf, "J — Inferido", None),
     ]
     
-    for i, (mat, titulo) in enumerate(paineis):
+    for i, (mat, titulo, v_max_fixo) in enumerate(paineis):
         ax = axes[i]
         ax.set_facecolor('#1a1a2e')
         
-        if np.all(mat == 0) or np.isnan(mat).all():
+        mat_vis = np.asarray(mat, dtype=np.float64)
+        if np.isnan(mat_vis).all():
             ax.set_title(titulo + " (Falhou/Timeout)", color='#cccccc', pad=10)
             ax.axis('off')
             continue
             
-        v_max = np.nanmax(np.abs(mat)) if not np.isnan(mat).all() else 1.0
+        v_max = v_max_fixo
+        if v_max is None:
+            v_max = np.nanmax(np.abs(mat_vis)) if not np.isnan(mat_vis).all() else 1.0
         if v_max == 0: v_max = 1.0
-        im = ax.imshow(mat, cmap=cmap, vmin=-v_max, vmax=v_max, aspect='auto', interpolation='nearest')
+        im = ax.imshow(mat_vis, cmap=cmap, vmin=-v_max, vmax=v_max, aspect='auto', interpolation='nearest')
         ax.set_title(titulo, color='#cccccc', pad=10)
         ax.set_xlabel("Spin $j$")
         ax.set_ylabel("Spin $i$")
@@ -1213,7 +2745,7 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
     plt.savefig(fig_path, dpi=300, facecolor='#1a1a2e', bbox_inches='tight')
     plt.close()
     
-    print(f"\n[Figura 2] Heatmaps salvos com sucesso em: {fig_path}")
+    print(f"\n[Figura 2] Heatmaps com 3 painéis salvos com sucesso em: {fig_path}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1560,7 +3092,7 @@ def gerar_figura3(spin_matrix: np.ndarray, resultados_inferencia: dict,
                   filename_suffix: str | None = None,
                   model_samples: np.ndarray | None = None,
                   diagnose_pairs: bool = True,
-                  n_amostras_mc: int = 100_000,
+                  n_amostras_mc: int = 200_000,
                   compact_stdout: bool = False):
     """
     Figura 3: Correlação de Tripletos (Schneidman / Hall & Bialek).
@@ -1708,66 +3240,92 @@ def gerar_figura3(spin_matrix: np.ndarray, resultados_inferencia: dict,
     else:
         log(f"  ⚠ Correlação abaixo do esperado. Possíveis causas: poucos dados ou correlações de alta ordem.")
     
-    # 5. Gerar gráfico (estilo idêntico à Figura 2)
-    plt.rcParams.update({'text.color': '#cccccc', 'axes.labelcolor': '#cccccc',
-                         'xtick.color': '#cccccc', 'ytick.color': '#cccccc'})
-    fig, ax = plt.subplots(figsize=(6, 5), facecolor='#1a1a2e')
-    ax.set_facecolor('#1a1a2e')
-    
-    # Escala automática baseada nos dados
-    all_vals = np.concatenate([c_emp, c_modelo])
-    v_max = max(np.abs(all_vals).max() * 1.3, 0.01)
-    
-    # Colormap jet (igual à Figura 2) — pontos coloridos pela magnitude empírica
-    cmap = matplotlib.colormaps.get_cmap('jet').copy()
-    norm = plt.Normalize(vmin=-v_max, vmax=v_max)
-    
-    # Linha diagonal y = x (previsão perfeita)
-    ax.plot([-v_max, v_max], [-v_max, v_max], '--', color='#666666',
-            linewidth=1, alpha=0.8, zorder=1)
-    
-    # Barras de erro
-    ax.errorbar(
-        c_emp, c_modelo,
-        xerr=erros, yerr=erros,
-        fmt='none', ecolor='#555555',
-        elinewidth=0.6, capsize=1.5, alpha=0.4, zorder=2
-    )
-    
-    # Scatter colorido pelo valor empírico
-    sc = ax.scatter(
-        c_emp, c_modelo,
-        c=c_emp, cmap=cmap, norm=norm,
-        s=30, edgecolors='#222222', linewidths=0.3,
-        zorder=3
-    )
-    fig.colorbar(sc, ax=ax, fraction=0.046, pad=0.04)
-    
-    # Labels e título (mesmo estilo da Figura 2)
-    r_label = "nan" if np.isnan(r_pearson) else f"{r_pearson:.3f}"
-    ax.set_title(
-        f"Tripletos {triplet_mode_used}  (Pearson $r$ = {r_label})",
-        color='#cccccc', pad=10
-    )
-    ax.set_xlabel(r'$C_{ijk}^{\,\mathrm{emp}}$')
-    ax.set_ylabel(r'$C_{ijk}^{\,\mathrm{pred}}$')
-    
-    # Limites simétricos
-    ax.set_xlim(-v_max, v_max)
-    ax.set_ylim(-v_max, v_max)
-    ax.set_aspect('equal')
-    
-    for spine in ax.spines.values():
-        spine.set_edgecolor('#444444')
-    
-    plt.tight_layout()
+    # 5. Gerar gráfico em estilo próximo ao artigo: pontos pretos e linha y=x.
+    def axis_limits(values: np.ndarray) -> tuple[float, float]:
+        finite = np.asarray(values, dtype=np.float64)
+        finite = finite[np.isfinite(finite)]
+        if finite.size == 0:
+            return 0.0, 0.01
+
+        data_min = float(finite.min())
+        data_max = float(finite.max())
+        span = max(data_max - data_min, abs(data_max) * 0.1, 0.01)
+        lower = 0.0 if data_min >= 0 else data_min - 0.05 * span
+        upper = data_max + 0.05 * span
+        if upper <= lower:
+            upper = lower + 0.01
+        return lower, upper
+
+    x_lim = axis_limits(c_emp)
+    y_lim = axis_limits(c_modelo)
+    identity_min = max(x_lim[0], y_lim[0])
+    identity_max = min(x_lim[1], y_lim[1])
+
+    plot_style = {
+        'font.family': 'serif',
+        'font.serif': ['Times New Roman', 'DejaVu Serif', 'serif'],
+        'mathtext.fontset': 'cm',
+        'font.size': 10,
+        'axes.labelsize': 13,
+        'xtick.labelsize': 10,
+        'ytick.labelsize': 10,
+        'axes.linewidth': 0.8,
+        'text.color': 'black',
+        'axes.labelcolor': 'black',
+        'xtick.color': 'black',
+        'ytick.color': 'black',
+    }
+    with plt.rc_context(plot_style):
+        fig, ax = plt.subplots(figsize=(5.2, 4.4), facecolor='white')
+        ax.set_facecolor('white')
+
+        ax.plot(
+            [identity_min, identity_max],
+            [identity_min, identity_max],
+            color='red',
+            linewidth=0.8,
+            zorder=1,
+        )
+        ax.scatter(
+            c_emp,
+            c_modelo,
+            s=5,
+            color='black',
+            edgecolors='none',
+            alpha=0.95,
+            label=(
+                r'Pearson $r$ = nan'
+                if np.isnan(r_pearson)
+                else rf'Pearson $r$ = {r_pearson:.4f}'
+            ),
+            zorder=2,
+        )
+
+        ax.set_xlim(*x_lim)
+        ax.set_ylim(*y_lim)
+        ax.set_xlabel(r'$C_{ijk}$ Empirical')
+        ax.set_ylabel(r'$C_{ijk}$ Predicted')
+        ax.tick_params(direction='in', top=True, right=True, width=0.6, length=3)
+        ax.legend(
+            loc='best',
+            frameon=True,
+            fancybox=False,
+            edgecolor='black',
+            fontsize=9,
+        )
+
+        for spine in ax.spines.values():
+            spine.set_color('black')
+            spine.set_linewidth(0.8)
+
+        fig.tight_layout()
     suffix = ""
     if filename_suffix:
         suffix_clean = "".join(ch if ch.isalnum() or ch in ("_", "-") else "_" for ch in str(filename_suffix))
         suffix = f"_{suffix_clean}"
     fig_path = f"figura3_tripletos{suffix}_{session_id}.png"
-    plt.savefig(fig_path, dpi=300, facecolor='#1a1a2e', bbox_inches='tight')
-    plt.close()
+    fig.savefig(fig_path, dpi=300, facecolor='white', bbox_inches='tight')
+    plt.close(fig)
     
     if compact_stdout:
         r_text = "nan" if np.isnan(r_pearson) else f"{r_pearson:.4f}"
@@ -1804,7 +3362,7 @@ def gerar_figura3_multimodo(spin_matrix: np.ndarray, resultados_inferencia: dict
                             session_id: str,
                             adjacency_mask: np.ndarray | None = None,
                             triplet_modes: list[str] | tuple[str, ...] = ("triangles",),
-                            n_amostras_mc: int = 100_000):
+                            n_amostras_mc: int = 200_000):
     """
     Roda a Figura 3 nos filtros topologicos de tripletos solicitados e salva um resumo.
     """
@@ -2200,12 +3758,22 @@ if __name__ == "__main__":
     parser.add_argument("csv_path", type=str, help="Caminho para a matriz_estados_.csv (valores +1/-1)")
     parser.add_argument("gexf_path", type=str, help="Caminho para o arquivo GEXF da rede correspondente")
     parser.add_argument("--lam", type=float, default=0.01, help="Parâmetro de regularização (padrão 0.01)")
-    parser.add_argument("--metodo", choices=["auto", "pseudo", "mch", "exact"], default="auto",
-                        help="Método de inferência: auto, pseudo, mch ou exact (padrão: auto)")
+    parser.add_argument("--metodo", choices=["auto", "mch", "mch_custom", "exact"], default="auto",
+                        help="Método de inferência: auto, mch, mch_custom ou exact (padrão: auto)")
     parser.add_argument("--mch-sample-size", type=int, default=100_000,
-                        help="Número de amostras MCMC por iteração do MCH (padrão: 100000)")
-    parser.add_argument("--mch-maxiter", type=int, default=100,
-                        help="Máximo de iterações externas do MCH (padrão: 100)")
+                        help="Número inicial de amostras MCMC por iteração do MCH (padrão: 100000)")
+    parser.add_argument("--mch-maxiter", type=int, default=200,
+                        help="Máximo de iterações externas do MCH (padrão: 200)")
+    parser.add_argument("--mch-plateau-improvement", type=float, default=0.0,
+                        help="Melhoria relativa mínima da média móvel antes de aumentar a amostra (padrão: 0.0; apenas piora)")
+    parser.add_argument("--mch-plateau-patience", type=int, default=4,
+                        help="Tamanho de cada janela da média móvel do MCH (padrão: 4)")
+    parser.add_argument("--mch-plateau-max-error", type=float, default=None,
+                        help="Limite opcional da média móvel para aumentar a amostra (padrão: sem limite)")
+    parser.add_argument("--mch-learning-profile",
+                        choices=["very_aggressive", "aggressive", "medium", "conservative", "adaptive_samples"],
+                        default="adaptive_samples",
+                        help="Perfil dos parâmetros do solver MCH (padrão: adaptive_samples)")
     parser.add_argument("--validar", action="store_true", help="Executa o Monte Carlo Metropolis para o modelo campeão")
     args = parser.parse_args()
 
@@ -2228,7 +3796,11 @@ if __name__ == "__main__":
         adjacency_mask=adjacency_mask,
         metodo_inferencia=args.metodo,
         mch_sample_size=args.mch_sample_size,
-        mch_maxiter=args.mch_maxiter
+        mch_maxiter=args.mch_maxiter,
+        mch_plateau_rel_improvement=args.mch_plateau_improvement,
+        mch_plateau_patience=args.mch_plateau_patience,
+        mch_plateau_max_error=args.mch_plateau_max_error,
+        mch_learning_profile=args.mch_learning_profile,
     )
     
     # Gera a figura
