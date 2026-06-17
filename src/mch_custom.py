@@ -206,7 +206,8 @@ if NUMBA_AVAILABLE:
                              n_chains,
                              n_iters,
                              burn_in,
-                             seed):
+                             seed,
+                             init_plus_probs):
         n = h.shape[0]
         samples = np.zeros((sample_size, n), dtype=np.int8)
         accepted = np.zeros(n_chains, dtype=np.int64)
@@ -219,7 +220,7 @@ if NUMBA_AVAILABLE:
             np.random.seed(seed + 1009 * chain)
             state = np.empty(n, dtype=np.int8)
             for i in range(n):
-                state[i] = 1 if np.random.random() < 0.5 else -1
+                state[i] = 1 if np.random.random() < init_plus_probs[i] else -1
 
             for _ in range(burn_in):
                 site = int(np.random.random() * n)
@@ -382,7 +383,8 @@ def _sample_states_python(h: np.ndarray,
                           n_chains: int,
                           n_iters: int,
                           burn_in: int,
-                          seed: int) -> tuple[np.ndarray, int, int]:
+                          seed: int,
+                          init_plus_probs: np.ndarray) -> tuple[np.ndarray, int, int]:
     rng = np.random.default_rng(seed)
     n = len(h)
     samples = np.zeros((sample_size, n), dtype=np.int8)
@@ -393,7 +395,7 @@ def _sample_states_python(h: np.ndarray,
     extra = sample_size % n_chains
 
     for chain in range(n_chains):
-        state = rng.choice(np.array([-1, 1], dtype=np.int8), size=n)
+        state = np.where(rng.random(n) < init_plus_probs, 1, -1).astype(np.int8)
 
         def flip_once() -> None:
             nonlocal accepted, proposed, state
@@ -452,8 +454,10 @@ def _sample_states(h: np.ndarray,
                    n_chains: int,
                    n_iters: int,
                    burn_in: int,
-                   seed: int) -> tuple[np.ndarray, dict]:
+                   seed: int,
+                   init_plus_probs: np.ndarray) -> tuple[np.ndarray, dict]:
     j_dense = _j_dense_from_edges(j_edges, edge_i, edge_j, n)
+    init_plus_probs = np.clip(np.asarray(init_plus_probs, dtype=np.float64), 0.0, 1.0)
     if NUMBA_AVAILABLE:
         try:
             states, accepted, proposed = _sample_states_numba(
@@ -464,6 +468,7 @@ def _sample_states(h: np.ndarray,
                 int(n_iters),
                 int(burn_in),
                 int(seed),
+                init_plus_probs.astype(np.float64),
             )
         except BaseException as exc:
             if _is_manual_interrupt_exception(exc):
@@ -479,6 +484,7 @@ def _sample_states(h: np.ndarray,
             int(n_iters),
             int(burn_in),
             int(seed),
+            init_plus_probs,
         )
         backend = "python"
 
@@ -540,21 +546,21 @@ def _sample_observables(h: np.ndarray,
 def _profile_params(profile: str | None, sample_size: int) -> dict:
     profile = (profile or "adaptive_samples").strip().lower()
     if profile in {"very_aggressive", "muito_agressivo", "muito-agressivo"}:
-        return {"maxdlamda": 0.80, "maxdlamdaNorm": 3.0, "eta": 0.40, "maxLearningSteps": 30}
+        return {"maxdlamda": 0.80, "maxdlamdaNorm": 3.0, "eta": 0.40, "maxLearningSteps": 20}
     if profile in {"aggressive", "agressivo", "agressiva"}:
-        return {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 25}
+        return {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 20}
     if profile in {"medium", "medio", "media", "médio", "média"}:
-        return {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 30}
+        return {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 20}
     if profile in {"conservative", "conservador", "conservadora"}:
         return {"maxdlamda": 0.08, "maxdlamdaNorm": 0.5, "eta": 0.05, "maxLearningSteps": 20}
 
     if sample_size < 200_000:
-        return {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 25}
+        return {"maxdlamda": 0.50, "maxdlamdaNorm": 2.0, "eta": 0.30, "maxLearningSteps": 20}
     if sample_size < 500_000:
-        return {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 30}
+        return {"maxdlamda": 0.20, "maxdlamdaNorm": 1.0, "eta": 0.15, "maxLearningSteps": 20}
     if sample_size < 1_200_000:
         return {"maxdlamda": 0.08, "maxdlamdaNorm": 0.5, "eta": 0.05, "maxLearningSteps": 20}
-    return {"maxdlamda": 0.05, "maxdlamdaNorm": 0.3, "eta": 0.035, "maxLearningSteps": 35}
+    return {"maxdlamda": 0.05, "maxdlamdaNorm": 0.3, "eta": 0.035, "maxLearningSteps": 20}
 
 
 def _profile_label(profile: str | None) -> str:
@@ -641,17 +647,21 @@ def _learn_parameters_mch_reweighted(current_observables: np.ndarray,
     learning_steps = 0
     stop_reason = "maxLearningSteps"
 
-    while True:
-        delta += -(predicted - target) * min(distance, 1.0) * eta
-        predicted = _mch_reweighted_observables(states, pair_products, delta)
+    while learning_steps < max_learning_steps:
+        candidate_delta = delta + -(predicted - target) * min(distance, 1.0) * eta
+        candidate_predicted = _mch_reweighted_observables(
+            states,
+            pair_products,
+            candidate_delta,
+        )
+
+        delta = candidate_delta
+        predicted = candidate_predicted
         distance = float(np.linalg.norm(predicted - target))
         learning_steps += 1
 
         if np.linalg.norm(delta) > maxdlamda_norm or np.any(np.abs(delta) > maxdlamda):
             stop_reason = "step_limit"
-            break
-        if learning_steps > max_learning_steps:
-            stop_reason = "maxLearningSteps"
             break
 
     return delta, predicted, {
@@ -692,6 +702,7 @@ def resolver_mch_custom(sample: np.ndarray,
 
     target_means, target_pairs = _empirical_observables(sample, edge_i, edge_j)
     target = np.concatenate([target_means, target_pairs])
+    init_plus_probs = np.clip((target_means + 1.0) * 0.5, 0.0, 1.0)
 
     tol_empirico = 3.0 / np.sqrt(r)
     tol_mc = 3.0 / np.sqrt(sample_size)
@@ -699,24 +710,6 @@ def resolver_mch_custom(sample: np.ndarray,
     tol = min(tol_empirico, min(tol_mc, tol_floor))
     tol_norm = tol * np.sqrt(len(target))
     learning_label = _profile_label(learning_profile)
-
-    print(
-        f"\n  [MCH-Custom] Iniciando solver custom para N={n}, R={r}, "
-        f"parametros={len(target)} ({len(edge_i)} arestas), "
-        f"sample_size={sample_size:,}, maxiter={maxiter}."
-    )
-    print(
-        f"  [MCH-Custom] Backend: {'Numba paralelo' if NUMBA_AVAILABLE else 'Python fallback'} | "
-        f"cadeias={n_chains} | tol={tol:.5f}."
-    )
-    print(
-        f"  [MCH-Custom] Execucao fixa: sample_size={sample_size:,}, "
-        f"iteracoes={maxiter}, MCH por reweighting, sem backtracking e sem aumento automatico de amostra."
-    )
-    print(
-        "  [MCH-Custom] Pressione Ctrl+C para usar a melhor iteracao concluida.",
-        flush=True,
-    )
 
     start = time.time()
     last_report_time = start
@@ -741,15 +734,20 @@ def resolver_mch_custom(sample: np.ndarray,
             n_iters,
             burn_in,
             seed_counter,
-        )
-    except KeyboardInterrupt:
+            init_plus_probs,
+            )
+        seed_counter += 10_000
+        acceptance_rates.append(sample_info["acceptance_rate"])
+        means, pairs = _observables_from_states(states, edge_i, edge_j)
+        pair_products = _pair_products_from_states(states, edge_i, edge_j)
+        current = np.concatenate([means, pairs])
+        error = current - target
+        current_score, current_error_norm, current_max_error = _error_metrics(error, tol, tol_norm)
+    except BaseException as exc:
+        if not _is_manual_interrupt_exception(exc):
+            raise
         error = np.full(len(target), np.nan, dtype=np.float64)
         multipliers = _assemble_full_multipliers(h, j_edges, dense_idx, n, param_bound)
-        print(
-            "  [MCH-Custom] Interrupcao manual recebida antes da primeira amostra completa. "
-            "Usando os parametros iniciais/warm-start.",
-            flush=True,
-        )
         run_info = {
             "solver": "custom_mch",
             "backend": "numba_parallel" if NUMBA_AVAILABLE else "python",
@@ -812,19 +810,16 @@ def resolver_mch_custom(sample: np.ndarray,
             "learning_profile_label": learning_label,
             "n_chains": n_chains,
             "n_edges": int(len(edge_i)),
+            "chain_initialization": "empirical",
+            "chain_init_plus_prob_min": float(np.min(init_plus_probs)),
+            "chain_init_plus_prob_median": float(np.median(init_plus_probs)),
+            "chain_init_plus_prob_max": float(np.max(init_plus_probs)),
             "elapsed_s": float(time.time() - start),
         }
         return multipliers, 3, np.vstack([error]), run_info
 
-    seed_counter += 10_000
-    acceptance_rates.append(sample_info["acceptance_rate"])
-    means, pairs = _observables_from_states(states, edge_i, edge_j)
-    pair_products = _pair_products_from_states(states, edge_i, edge_j)
-    current = np.concatenate([means, pairs])
-    error = current - target
-    current_score, current_error_norm, current_max_error = _error_metrics(error, tol, tol_norm)
-
-    best_score = current_score
+    n_error_terms = max(len(error), 1)
+    best_score = current_error_norm / np.sqrt(n_error_terms)
     best_error = error.copy()
     best_error_norm = current_error_norm
     best_max_error = current_max_error
@@ -835,6 +830,7 @@ def resolver_mch_custom(sample: np.ndarray,
     best_updates = [{
         "iteration": 0,
         "score": best_score,
+        "combined_score": current_score,
         "error_norm": best_error_norm,
         "max_error": best_max_error,
         "sample_size": best_sample_size,
@@ -842,20 +838,22 @@ def resolver_mch_custom(sample: np.ndarray,
     errors = [error.copy()]
 
     print(
-        f"  [MCH-Custom] Iteracao inicial | max|erro|={current_max_error:.5f} | "
-        f"||erro||={current_error_norm:.5f} | "
-        f"dentro_tol={np.mean(np.abs(error) < tol) * 100:.1f}% | "
+        f"Iteracao 0/{maxiter} | "
+        f"max|erro|={current_max_error:.5f} | "
+        f"norm||erro||={current_error_norm / np.sqrt(n_error_terms):.5f} | "
+        f"best_norm||erro||={best_score:.5f} | "
         f"amostra={current_sample_size:,} | "
-        f"acc={sample_info['acceptance_rate']:.2f} | total={time.time() - start:.1f}s",
+        f"|dtheta|=0 | "
+        f"acc={sample_info['acceptance_rate']:.2f} | "
+        f"etapa=0.0s | "
+        f"total={time.time() - start:.1f}s",
         flush=True,
     )
 
-    errflag = 1
+    errflag = 0
     stop_reason = "maxiter"
     completed_iterations = 0
     converged_iteration = None
-    if current_error_norm < tol_norm and np.all(np.abs(error) < tol):
-        converged_iteration = 0
 
     for counter in range(1, maxiter + 1):
         try:
@@ -886,55 +884,52 @@ def resolver_mch_custom(sample: np.ndarray,
                 n_iters,
                 burn_in,
                 seed_counter,
+                init_plus_probs,
             )
+
+            seed_counter += 10_000
+            acceptance_rates.append(sample_info["acceptance_rate"])
+            means, pairs = _observables_from_states(states, edge_i, edge_j)
+            pair_products = _pair_products_from_states(states, edge_i, edge_j)
+            current = np.concatenate([means, pairs])
+            error = current - target
+            current_score, current_error_norm, current_max_error = _error_metrics(error, tol, tol_norm)
+            errors.append(error.copy())
+            completed_iterations = counter
+
+            norm_error = current_error_norm / np.sqrt(n_error_terms)
+            if norm_error < best_score:
+                best_score = norm_error
+                best_error = error.copy()
+                best_error_norm = current_error_norm
+                best_max_error = current_max_error
+                best_h = h.copy()
+                best_j_edges = j_edges.copy()
+                best_iteration = counter
+                best_sample_size = current_sample_size
+                best_updates.append({
+                    "iteration": best_iteration,
+                    "score": best_score,
+                    "combined_score": current_score,
+                    "error_norm": best_error_norm,
+                    "max_error": best_max_error,
+                    "sample_size": best_sample_size,
+                })
         except BaseException as exc:
             if not _is_manual_interrupt_exception(exc):
                 raise
             stop_reason = "manual_interrupt"
             errflag = 3
-            print(
-                "  [MCH-Custom] Interrupcao manual recebida. "
-                "Restaurando a melhor iteracao concluida.",
-                flush=True,
-            )
             break
-
-        seed_counter += 10_000
-        acceptance_rates.append(sample_info["acceptance_rate"])
-        means, pairs = _observables_from_states(states, edge_i, edge_j)
-        pair_products = _pair_products_from_states(states, edge_i, edge_j)
-        current = np.concatenate([means, pairs])
-        error = current - target
-        current_score, current_error_norm, current_max_error = _error_metrics(error, tol, tol_norm)
-        errors.append(error.copy())
-        completed_iterations = counter
-
-        if current_score < best_score:
-            best_score = current_score
-            best_error = error.copy()
-            best_error_norm = current_error_norm
-            best_max_error = current_max_error
-            best_h = h.copy()
-            best_j_edges = j_edges.copy()
-            best_iteration = counter
-            best_sample_size = current_sample_size
-            best_updates.append({
-                "iteration": best_iteration,
-                "score": best_score,
-                "error_norm": best_error_norm,
-                "max_error": best_max_error,
-                "sample_size": best_sample_size,
-            })
 
         now = time.time()
         abs_error = np.abs(error)
         print(
-            f"  [MCH-Custom] Iteracao {counter}/{maxiter} | "
+            f"Iteracao {counter}/{maxiter} | "
             f"max|erro|={current_max_error:.5f} | "
-            f"||erro||={current_error_norm:.5f} | "
-            f"dentro_tol={np.mean(abs_error < tol) * 100:.1f}% | "
+            f"norm||erro||={current_error_norm / np.sqrt(n_error_terms):.5f} | "
+            f"best_norm||erro||={best_score:.5f} | "
             f"amostra={current_sample_size:,} | "
-            f"mch_steps={learn_info['learning_steps']} | "
             f"|dtheta|={learn_info['delta_norm']:.3g} | "
             f"acc={sample_info['acceptance_rate']:.2f} | "
             f"etapa={now - last_report_time:.1f}s | "
@@ -942,18 +937,6 @@ def resolver_mch_custom(sample: np.ndarray,
             flush=True,
         )
         last_report_time = now
-
-        if converged_iteration is None and current_error_norm < tol_norm and np.all(abs_error < tol):
-            converged_iteration = counter
-            print(
-                f"  [MCH-Custom] Criterio formal atingido na iteracao {counter}; "
-                f"continuando ate {maxiter} iteracoes como configurado.",
-                flush=True,
-            )
-
-    if completed_iterations >= maxiter and converged_iteration is not None:
-        stop_reason = "converged"
-        errflag = 0
 
     multipliers = _assemble_full_multipliers(best_h, best_j_edges, dense_idx, n, param_bound)
     run_info = {
@@ -1018,6 +1001,10 @@ def resolver_mch_custom(sample: np.ndarray,
         "learning_profile_label": learning_label,
         "n_chains": n_chains,
         "n_edges": int(len(edge_i)),
+        "chain_initialization": "empirical",
+        "chain_init_plus_prob_min": float(np.min(init_plus_probs)),
+        "chain_init_plus_prob_median": float(np.median(init_plus_probs)),
+        "chain_init_plus_prob_max": float(np.max(init_plus_probs)),
         "elapsed_s": float(time.time() - start),
     }
     return multipliers, errflag, np.vstack(errors), run_info

@@ -14,6 +14,7 @@ import sys
 import time
 import io
 import argparse
+import glob
 import multiprocessing as mp
 from datetime import datetime
 from importlib import import_module
@@ -34,6 +35,24 @@ from scipy.optimize import minimize
 for attr in dir(np):
     if not attr.startswith('_') and not hasattr(scipy, attr):
         setattr(scipy, attr, getattr(np, attr))
+
+
+def remover_arquivos_temporarios_npy(paths, label="arquivos temporários"):
+    """
+    Remove arquivos NPY temporários gerados durante a inferência.
+    """
+    removidos = 0
+    for path in sorted(set(paths)):
+        if not path or not os.path.exists(path):
+            continue
+        try:
+            os.remove(path)
+            removidos += 1
+        except OSError as e:
+            print(f"  [Limpeza] Aviso: não foi possível remover {path}: {e}")
+    if removidos:
+        print(f"  [Limpeza] {removidos} {label} removido(s).")
+    return removidos
 
 try:
     import coniii
@@ -861,7 +880,7 @@ def torneio_warm_starts(sample: np.ndarray,
         candidates.append((name, multipliers, metrics))
         return metrics
 
-    print("\n  [Warm-start] Torneio de candidatos para inicializar o MCH:")
+    print("\n  [Warm-start] Torneio de candidatos para inicializar o solver:")
     add_candidate("independente_suave", chute_independente_suavizado(sample, alpha=0.5, param_bound=param_bound))
     add_candidate("covariancia_fraca", initial_guess)
 
@@ -1306,7 +1325,9 @@ def _resolver_mch_loop_com_plateau(
     this_constraints = estimate_constraints()
     initial_error = this_constraints - constraints
     errors.append(initial_error)
-    best_score, best_error_norm, best_max_error = error_metrics(initial_error)
+    initial_score, best_error_norm, best_max_error = error_metrics(initial_error)
+    n_error_terms = max(len(initial_error), 1)
+    best_score = best_error_norm / np.sqrt(n_error_terms)
     best_iteration = 0
     best_error = initial_error.copy()
     best_multipliers = solver._multipliers.copy()
@@ -1314,16 +1335,20 @@ def _resolver_mch_loop_com_plateau(
     best_updates = [{
         "iteration": best_iteration,
         "score": best_score,
+        "combined_score": initial_score,
         "error_norm": best_error_norm,
         "max_error": best_max_error,
         "sample_size": best_sample_size,
     }]
     print(
-        f"  [MCH] Iteracao inicial | "
+        f"Iteracao 0/{maxiter} | "
         f"max|erro|={best_max_error:.5f} | "
-        f"||erro||={best_error_norm:.5f} | "
-        f"dentro_tol={np.mean(np.abs(initial_error) < tol) * 100:.1f}% | "
+        f"norm||erro||={best_score:.5f} | "
+        f"best_norm||erro||={best_score:.5f} | "
         f"amostra={int(solver.model.sampleSize):,} | "
+        f"|dtheta|=0 | "
+        f"acc=n/a | "
+        f"etapa=0.0s | "
         f"total={time.time() - mch_start:.1f}s",
         flush=True,
     )
@@ -1334,9 +1359,9 @@ def _resolver_mch_loop_com_plateau(
     moving_average_recent = np.nan
     final_relative_improvement = np.nan
     current_error = initial_error.copy()
-    current_score = best_score
+    current_score = initial_score
     stop_reason = "maxiter"
-    errflag = 1
+    errflag = 0
     sample_size_history = [int(solver.model.sampleSize)]
     sample_increase_events = []
     backtracking_events = []
@@ -1350,24 +1375,12 @@ def _resolver_mch_loop_com_plateau(
     attempt_status_width = 58
     attempt_status_inline = sys.stdout.isatty()
     learn_params = mch_schedule(counter, int(solver.model.sampleSize))
-    print(
-        "  [MCH] Pressione Ctrl+C para encerrar o MCH com segurança e usar a melhor iteração concluída.",
-        flush=True,
-    )
 
     def print_attempt_status(iteration: int, attempt_idx: int) -> None:
-        status = (
-            f"  [MCH] Iteracao {iteration} | "
-            f"tentativa {attempt_idx}/{max_attempts_per_iteration}"
-        )
-        if attempt_status_inline:
-            print("\r" + status[:attempt_status_width].ljust(attempt_status_width), end="", flush=True)
-        else:
-            print(status, flush=True)
+        return None
 
     def clear_attempt_status() -> None:
-        if attempt_status_inline:
-            print("\r" + " " * attempt_status_width + "\r", end="", flush=True)
+        return None
 
     def learning_params_for_attempt(base_params: dict, attempt_idx: int) -> tuple[dict, float]:
         scale = attempt_decay ** max(0, attempt_idx - 1)
@@ -1475,11 +1488,6 @@ def _resolver_mch_loop_com_plateau(
                 stop_reason = "manual_interrupt"
                 errflag = 3
                 clear_attempt_status()
-                print(
-                    "  [MCH] Interrupção manual recebida. "
-                    "Descartando a tentativa incompleta e restaurando a melhor iteração concluída.",
-                    flush=True,
-                )
                 break
 
             candidate_error = candidate_constraints - constraints
@@ -1535,10 +1543,14 @@ def _resolver_mch_loop_com_plateau(
             if aumentar_amostra_apos_backtracking("backtracking_sem_melhora"):
                 now = time.time()
                 print(
-                    f"  [MCH] Iteracao {failed_iteration} | "
-                    f"sem melhora em {max_attempts_per_iteration} tentativas | "
-                    f"amostra {sample_size_used:,}->{int(solver.model.sampleSize):,} | "
-                    f"melhor_global={best_iteration} | "
+                    f"Iteracao {counter}/{maxiter} | "
+                    f"max|erro|={best_max_error:.5f} | "
+                    f"norm||erro||={best_error_norm / np.sqrt(n_error_terms):.5f} | "
+                    f"best_norm||erro||={best_score:.5f} | "
+                    f"amostra={int(solver.model.sampleSize):,} | "
+                    f"|dtheta|=0 | "
+                    f"acc=n/a | "
+                    f"etapa={now - last_report_time:.1f}s | "
                     f"total={now - mch_start:.1f}s",
                     flush=True,
                 )
@@ -1546,17 +1558,27 @@ def _resolver_mch_loop_com_plateau(
                 learn_params = mch_schedule(counter, int(solver.model.sampleSize))
                 continue
             now = time.time()
+            counter += 1
+            errors.append(base_error.copy())
+            base_max_error = float(np.max(np.abs(base_error))) if base_error.size else 0.0
             print(
-                f"  [MCH] Iteracao {failed_iteration} | "
-                f"sem melhora em {max_attempts_per_iteration} tentativas | "
+                f"Iteracao {counter}/{maxiter} | "
+                f"max|erro|={base_max_error:.5f} | "
+                f"norm||erro||={np.linalg.norm(base_error) / np.sqrt(n_error_terms):.5f} | "
+                f"best_norm||erro||={best_score:.5f} | "
                 f"amostra={sample_size_used:,} | "
-                f"sem novo sample | "
+                f"|dtheta|=0 | "
+                f"acc=n/a | "
+                f"etapa={now - last_report_time:.1f}s | "
                 f"total={now - mch_start:.1f}s",
                 flush=True,
             )
-            stop_reason = "no_improvement"
-            errflag = 2
-            break
+            last_report_time = now
+            if counter >= maxiter:
+                stop_reason = "maxiter"
+                errflag = 0
+                break
+            continue
 
         solver._multipliers = accepted["multipliers"].copy()
         solver.multipliers = accepted["multipliers"].copy()
@@ -1571,9 +1593,11 @@ def _resolver_mch_loop_com_plateau(
         score = accepted["score"]
         error_norm = accepted["error_norm"]
         max_error = accepted["max_error"]
+        delta_norm = float(np.linalg.norm(accepted["multipliers"] - base_multipliers))
 
-        if score < best_score:
-            best_score = score
+        norm_error = error_norm / np.sqrt(n_error_terms)
+        if norm_error < best_score:
+            best_score = norm_error
             best_error_norm = error_norm
             best_max_error = max_error
             best_iteration = counter
@@ -1583,6 +1607,7 @@ def _resolver_mch_loop_com_plateau(
             best_updates.append({
                 "iteration": best_iteration,
                 "score": best_score,
+                "combined_score": score,
                 "error_norm": best_error_norm,
                 "max_error": best_max_error,
                 "sample_size": best_sample_size,
@@ -1608,27 +1633,22 @@ def _resolver_mch_loop_com_plateau(
             else f"{final_relative_improvement * 100:+.1f}%"
         )
         print(
-            f"  [MCH] Iteracao {counter} | "
+            f"Iteracao {counter}/{maxiter} | "
             f"max|erro|={max_error:.5f} | "
-            f"||erro||={error_norm:.5f} | "
-            f"dentro_tol={np.mean(abs_error < tol) * 100:.1f}% | "
-            f"media_movel={moving_average_recent:.5f} | "
-            f"melhoria_media={improvement_text} | "
+            f"norm||erro||={error_norm / np.sqrt(n_error_terms):.5f} | "
+            f"best_norm||erro||={best_score:.5f} | "
             f"amostra={sample_size_used:,} | "
-            f"tentativas={accepted['attempt']} | escala={accepted['attempt_scale']:.3g} | "
+            f"|dtheta|={delta_norm:.3g} | "
+            f"acc=n/a | "
             f"etapa={now - last_report_time:.1f}s | "
             f"total={now - mch_start:.1f}s",
             flush=True,
         )
         last_report_time = now
 
-        if error_norm < tol_norm and np.all(abs_error < tol):
-            stop_reason = "converged"
-            errflag = 0
-            break
         if counter >= maxiter:
             stop_reason = "maxiter"
-            errflag = 1
+            errflag = 0
             break
 
         learn_params = mch_schedule(counter, int(solver.model.sampleSize))
@@ -1755,8 +1775,9 @@ def _resolver_mch_loop_fixo(
     current_error = this_constraints - constraints
     errors = [current_error.copy()]
     current_score, current_error_norm, current_max_error = error_metrics(current_error)
+    n_error_terms = max(len(current_error), 1)
 
-    best_score = current_score
+    best_score = current_error_norm / np.sqrt(n_error_terms)
     best_error = current_error.copy()
     best_error_norm = current_error_norm
     best_max_error = current_max_error
@@ -1766,31 +1787,29 @@ def _resolver_mch_loop_fixo(
     best_updates = [{
         "iteration": 0,
         "score": best_score,
+        "combined_score": current_score,
         "error_norm": best_error_norm,
         "max_error": best_max_error,
         "sample_size": best_sample_size,
     }]
 
     print(
-        f"  [MCH] Iteracao inicial | "
+        f"Iteracao 0/{maxiter} | "
         f"max|erro|={current_max_error:.5f} | "
-        f"||erro||={current_error_norm:.5f} | "
-        f"dentro_tol={np.mean(np.abs(current_error) < tol) * 100:.1f}% | "
+        f"norm||erro||={current_error_norm / np.sqrt(n_error_terms):.5f} | "
+        f"best_norm||erro||={best_score:.5f} | "
         f"amostra={sample_size_used:,} | "
+        f"|dtheta|=n/a | "
+        f"acc=n/a | "
+        f"etapa=0.0s | "
         f"total={time.time() - mch_start:.1f}s",
         flush=True,
     )
 
     stop_reason = "maxiter"
-    errflag = 1
+    errflag = 0
     completed_iterations = 0
     converged_iteration = None
-
-    print(
-        "  [MCH] Execucao fixa: uma atualizacao e uma amostragem por iteracao. "
-        "Pressione Ctrl+C para usar a melhor iteracao concluida.",
-        flush=True,
-    )
 
     for counter in range(1, maxiter + 1):
         learn_params = mch_schedule(counter - 1, sample_size_used)
@@ -1806,11 +1825,6 @@ def _resolver_mch_loop_fixo(
         except KeyboardInterrupt:
             stop_reason = "manual_interrupt"
             errflag = 3
-            print(
-                "  [MCH] Interrupção manual recebida. "
-                "Restaurando a melhor iteração concluída.",
-                flush=True,
-            )
             break
 
         current_error = this_constraints - constraints
@@ -1818,8 +1832,9 @@ def _resolver_mch_loop_fixo(
         current_score, current_error_norm, current_max_error = error_metrics(current_error)
         completed_iterations = counter
 
-        if current_score < best_score:
-            best_score = current_score
+        norm_error = current_error_norm / np.sqrt(n_error_terms)
+        if norm_error < best_score:
+            best_score = norm_error
             best_error = current_error.copy()
             best_error_norm = current_error_norm
             best_max_error = current_max_error
@@ -1829,36 +1844,26 @@ def _resolver_mch_loop_fixo(
             best_updates.append({
                 "iteration": best_iteration,
                 "score": best_score,
+                "combined_score": current_score,
                 "error_norm": best_error_norm,
                 "max_error": best_max_error,
                 "sample_size": best_sample_size,
             })
 
-        abs_error = np.abs(current_error)
         now = time.time()
         print(
-            f"  [MCH] Iteracao {counter}/{maxiter} | "
+            f"Iteracao {counter}/{maxiter} | "
             f"max|erro|={current_max_error:.5f} | "
-            f"||erro||={current_error_norm:.5f} | "
-            f"dentro_tol={np.mean(abs_error < tol) * 100:.1f}% | "
+            f"norm||erro||={current_error_norm / np.sqrt(n_error_terms):.5f} | "
+            f"best_norm||erro||={best_score:.5f} | "
             f"amostra={sample_size_used:,} | "
+            f"|dtheta|=n/a | "
+            f"acc=n/a | "
             f"etapa={now - last_report_time:.1f}s | "
             f"total={now - mch_start:.1f}s",
             flush=True,
         )
         last_report_time = now
-
-        if converged_iteration is None and current_error_norm < tol_norm and np.all(abs_error < tol):
-            converged_iteration = counter
-            print(
-                f"  [MCH] Critério formal atingido na iteração {counter}; "
-                f"continuando até {maxiter} iterações como configurado.",
-                flush=True,
-            )
-
-    if completed_iterations >= maxiter and converged_iteration is not None:
-        stop_reason = "converged"
-        errflag = 0
 
     solver._multipliers = best_multipliers.copy()
     solver.multipliers = best_multipliers.copy()
@@ -1948,15 +1953,6 @@ def resolver_mch_coniii(sample: np.ndarray,
         raise RuntimeError("Esta versão do ConIII não expõe SparseMCH; MCH com A_ij não é suportado.")
     solver_cls = coniii.solvers.SparseMCH if use_sparse else coniii.solvers.MCH
 
-    print(
-        f"\n  [MCH] Iniciando Monte Carlo Histogram para N={N}, R={R} "
-        f"(sample_size={sample_size:,}, maxiter={maxiter})."
-    )
-    if use_sparse:
-        print(f"  [MCH] SparseMCH com {len(parameter_ix)}/{len(initial_guess)} parametros livres por A_ij.")
-    else:
-        print("  [MCH] MCH denso: todos os pares J_ij livres.")
-
     solver_kwargs = {
         "sample": sample,
         "sample_size": sample_size,
@@ -1994,31 +1990,6 @@ def resolver_mch_coniii(sample: np.ndarray,
         s for s in [100_000, 200_000, 400_000, 800_000, 1_600_000, 2_500_000]
         if s >= sample_size and s <= max_sample_size
     } | {sample_size, max_sample_size})
-    print(
-        f"  [MCH] Tolerancia ajustada: tol={tol:.5f} "
-        f"(empirica={tol_empirico:.5f}, MC inicial={tol_mc:.5f}, piso={tol_floor:.5f}); "
-        f"maxiter={maxiter}."
-    )
-    print(
-        f"  [MCH] Execucao fixa: sample_size={sample_size:,}, "
-        f"iteracoes={maxiter}, sem backtracking e sem aumento automatico de amostra."
-    )
-    print(f"  [MCH] Perfil do solver: {learning_label}.")
-    if learning_profile == "adaptive_samples":
-        print(
-            "  [MCH] Fases por amostra: <200k agressivo | "
-            "200k-499k medio | 500k-1.19M conservador | >=1.2M fino."
-        )
-    else:
-        learn_preview = parametros_mch_por_perfil(learning_profile, sample_size)
-        print(
-            "  [MCH] Parametros fixos: "
-            f"maxdlamda={learn_preview['maxdlamda']}, "
-            f"maxdlamdaNorm={learn_preview['maxdlamdaNorm']}, "
-            f"eta={learn_preview['eta']}, "
-            f"maxLearningSteps={learn_preview['maxLearningSteps']}."
-        )
-
     multipliers_selected, errflag, errors, run_info = _resolver_mch_loop_fixo(
         solver=solver,
         constraints=constraints,
@@ -2046,31 +2017,6 @@ def resolver_mch_coniii(sample: np.ndarray,
         J = unpack_J(multipliers[N:], N)
         J[~preparar_mascara_adjacencia(adjacency_mask, N)] = 0.0
         multipliers = np.concatenate([multipliers[:N], pack_J(J)])
-
-    final_error = np.asarray(run_info.get("best_error", []), dtype=np.float64)
-    if final_error.size:
-        final_abs_error = np.abs(final_error)
-        print(
-            f"  [MCH] Melhor iteracao={run_info['best_iteration']} "
-            f"de {max(0, len(errors) - 1)} | "
-            f"maxiter_configurado={maxiter} | "
-            f"errflag={errflag} | "
-            f"||erro||={np.linalg.norm(final_error):.5f} | "
-            f"max|erro|={final_abs_error.max():.5f} | "
-            f"dentro_tol={np.mean(final_abs_error < tol) * 100:.1f}% | "
-            f"amostra={run_info['best_sample_size']:,} | "
-            f"motivo={run_info['stop_reason']} | "
-            f"tempo={run_info['elapsed_s']:.1f}s"
-        )
-    if run_info["stop_reason"] == "maxiter":
-        print("  [MCH] Aviso: maxiter atingido antes do criterio formal de convergencia.")
-    elif run_info["stop_reason"] == "manual_interrupt":
-        print("  [MCH] Interrupção manual aceita; continuando com validação, tripletos e P(Q).")
-    if run_info["best_iteration"] != run_info["last_iteration"]:
-        print(
-            f"  [MCH] Retornando parametros da melhor iteracao observada, "
-            f"nao da ultima ({run_info['last_iteration']})."
-        )
 
     return multipliers, errflag, errors, run_info
 
@@ -2194,6 +2140,7 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
     metodo_str = None
     metodo_escolhido = normalizar_metodo_inferencia(metodo_inferencia)
     mch_info = {}
+    temp_mch_custom_checkpoints = []
     try:
         usar_pseudo_por_topologia = adjacency_mask is not None
         if usar_pseudo_por_topologia:
@@ -2314,6 +2261,8 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
                 checkpoint_prefix = "mch_custom" if custom_mch else "mch"
                 checkpoint_path = f"{checkpoint_prefix}_melhor_{session_id}_rodada_{segment_idx}.npy"
                 np.save(checkpoint_path, best_global_multipliers)
+                if custom_mch:
+                    temp_mch_custom_checkpoints.append(checkpoint_path)
                 print(
                     f"  {log_prefix} Melhor resultado salvo em: {checkpoint_path} | "
                     f"melhor_score={best_global_score:.5f}"
@@ -2392,7 +2341,7 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
         elif metodo_escolhido == "exact":
             metodo_str = "Enumerate-Exact"
             print(f"\n  [{metodo_str}] Iniciando inferência exata para N={N}, R={R}...")
-            warm_start, pseudo_tuning_info = auto_tune_pseudo_warm_start(
+            warm_start, pseudo_tuning_info = torneio_warm_starts(
                 spin_matrix,
                 initial_guess=initial_guess_base,
                 adjacency_mask=adjacency_mask,
@@ -2589,17 +2538,24 @@ def inferir_modelo(spin_matrix: np.ndarray, session_id: str, lam: float = 0.01,
     df_comp = pd.DataFrame(tabela)
     csv_path = f"comparacao_metodos_{session_id}.csv"
     df_comp.to_csv(csv_path, index=False)
+    temp_mch_custom_checkpoints.extend(glob.glob(f"mch_custom_melhor_{session_id}*.npy"))
+    remover_arquivos_temporarios_npy(
+        temp_mch_custom_checkpoints,
+        label="checkpoint(s) temporário(s) MCH-Custom"
+    )
     
     return resultados
 
-def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict, 
-                  gexf_path: str, node_names: list, session_id: str):
+def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
+                  gexf_path: str, node_names: list, session_id: str,
+                  model_samples: np.ndarray | None = None,
+                  n_amostras_mc: int = 100_000):
     """
-    Figura 2: Covariância empírica, covariância reconstruída e acoplamentos J.
-    Aplica filtro topológico substituindo as pontes desconectadas por NaN
-    usando a rede GEXF original da comunidade correspondente aos nós (usuários).
+    Figura 2: Covariância empírica e covariância reconstruída.
+    Aplica filtro topológico substituindo pares sem A_ij por NaN. A diagonal i=j
+    também é mascarada, pois não representa uma covariância entre usuários distintos.
     """
-    print("\n[Figura 2] Inicializando geração dos 3 heatmaps lado a lado...")
+    print("\n[Figura 2] Inicializando geração dos 2 heatmaps de covariância lado a lado...")
     # Mesma orientação da inferência: linhas = keywords/amostras, colunas = usuários/spins.
     spin_matrix = spin_matrix.T
     R, N = spin_matrix.shape
@@ -2610,10 +2566,18 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
             return np.zeros((N, N), dtype=np.float64)
         centrado = amostras - amostras.mean(axis=0, keepdims=True)
         C = (centrado.T @ centrado) / float(amostras.shape[0])
-        np.fill_diagonal(C, 0.0)
         return C
 
     C_emp = calcular_covariancia_centrada(spin_matrix)
+
+    def validar_amostras_modelo(amostras: np.ndarray, contexto: str) -> np.ndarray:
+        amostras = np.asarray(amostras, dtype=np.float64)
+        if amostras.ndim != 2 or amostras.shape[1] != N:
+            raise ValueError(
+                f"Amostras do modelo inválidas para {contexto}: esperado (*, {N}), "
+                f"recebido {amostras.shape}."
+            )
+        return amostras
     
     # Filtro topológico
     aplicar_filtro = False
@@ -2633,9 +2597,6 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
         else:
             print(f"  [Filtro] GEXF válido ({len(encontrados)}/{len(node_names)} nós). Aplicando máscara...")
             aplicar_filtro = True
-            # nodelist deve conter APENAS nós presentes em G para evitar KeyError.
-            # Nós ausentes recebem linha/coluna de zeros (sem aresta), correto.
-            nodelist_safe = [n if n in nos_gexf else None for n in node_names]
             # Constrói a máscara manualmente para suportar nós ausentes
             A_mask = np.zeros((N, N), dtype=bool)
             name_to_idx = {n: i for i, n in enumerate(node_names)}
@@ -2644,15 +2605,14 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
                     i_u, i_v = name_to_idx[u], name_to_idx[v]
                     A_mask[i_u, i_v] = True
                     A_mask[i_v, i_u] = True
-            np.fill_diagonal(A_mask, True)
     else:
         print(f"  [Aviso] GEXF '{gexf_path}' não encontrado. Filtro topológico desabilitado.")
 
     def aplicar_mascara(matriz):
-        if not aplicar_filtro:
-            return matriz
         m_copy = matriz.copy()
-        m_copy[~A_mask] = np.nan
+        if aplicar_filtro:
+            m_copy[~A_mask] = np.nan
+        np.fill_diagonal(m_copy, np.nan)
         return m_copy
 
     # Extrai o primeiro resultado independente do nome do método
@@ -2668,84 +2628,96 @@ def gerar_figura2(spin_matrix: np.ndarray, resultados_inferencia: dict,
         medias_modelo = probs @ states
         centrado = states - medias_modelo
         C_model = (centrado * probs[:, None]).T @ centrado
-        np.fill_diagonal(C_model, 0.0)
     else:
-        mch_info = res_vals.get("mch_info") or {}
-        n_amostras_base = mch_info.get(
-            "best_sample_size",
-            mch_info.get("sample_size", res_vals.get("mch_sample_size", 200_000))
-        )
-        try:
-            n_amostras_fig2 = int(n_amostras_base)
-        except (TypeError, ValueError, OverflowError):
-            n_amostras_fig2 = 200_000
-        n_amostras_fig2 = max(50_000, min(n_amostras_fig2, 200_000))
-        print(
-            "  [Modelo] Covariância reconstruída por Monte Carlo "
-            f"({n_amostras_fig2:,} amostras; N={N})."
-        )
-        amostras_modelo = _amostrar_modelo_metropolis(
-            multipliers,
-            N,
-            n_amostras_fig2,
-            label="covariância reconstruída da Figura 2"
-        )
+        if model_samples is not None:
+            amostras_modelo = validar_amostras_modelo(model_samples, "Figura 2")
+            print(
+                "  [Modelo] Covariância reconstruída reutilizando "
+                f"{amostras_modelo.shape[0]:,} amostras Monte Carlo."
+            )
+        else:
+            n_amostras_mc = int(n_amostras_mc)
+            print(
+                "  [Modelo] Covariância reconstruída por Monte Carlo "
+                f"({n_amostras_mc:,} amostras; N={N})."
+            )
+            amostras_modelo = _amostrar_modelo_metropolis(
+                multipliers,
+                N,
+                n_amostras_mc,
+                label="covariância reconstruída da Figura 2"
+            )
         C_model = calcular_covariancia_centrada(amostras_modelo)
 
     C_emp_masked = aplicar_mascara(C_emp)
     C_model_masked = aplicar_mascara(C_model)
-    J_inf = aplicar_mascara(res_vals.get("J", np.zeros((N, N))))
 
-    cov_vmax = np.nanmax(np.abs(np.stack([
-        np.nan_to_num(C_emp_masked, nan=0.0),
-        np.nan_to_num(C_model_masked, nan=0.0),
-    ])))
-    if not np.isfinite(cov_vmax) or cov_vmax == 0:
+    cov_values = np.concatenate([
+        C_emp_masked[np.isfinite(C_emp_masked)],
+        C_model_masked[np.isfinite(C_model_masked)],
+    ])
+    cov_vmax = float(np.max(cov_values)) if cov_values.size else 0.0
+    if not np.isfinite(cov_vmax) or cov_vmax <= 0:
         cov_vmax = 1.0
 
     # Configuração da figura matplotlib
-    plt.rcParams.update({'text.color': '#cccccc', 'axes.labelcolor': '#cccccc',
-                         'xtick.color': '#cccccc', 'ytick.color': '#cccccc'})
-    fig, axes = plt.subplots(1, 3, figsize=(15.5, 5), facecolor='#1a1a2e')
-    
-    cmap = matplotlib.colormaps.get_cmap('jet').copy()
-    cmap.set_bad(color='white')
-    
-    paineis = [
-        (C_emp_masked, "Covariância Empírica", cov_vmax),
-        (C_model_masked, "Covariância Reconstruída", cov_vmax),
-        (J_inf, "J — Inferido", None),
-    ]
-    
-    for i, (mat, titulo, v_max_fixo) in enumerate(paineis):
-        ax = axes[i]
-        ax.set_facecolor('#1a1a2e')
-        
-        mat_vis = np.asarray(mat, dtype=np.float64)
-        if np.isnan(mat_vis).all():
-            ax.set_title(titulo + " (Falhou/Timeout)", color='#cccccc', pad=10)
-            ax.axis('off')
-            continue
-            
-        v_max = v_max_fixo
-        if v_max is None:
-            v_max = np.nanmax(np.abs(mat_vis)) if not np.isnan(mat_vis).all() else 1.0
-        if v_max == 0: v_max = 1.0
-        im = ax.imshow(mat_vis, cmap=cmap, vmin=-v_max, vmax=v_max, aspect='auto', interpolation='nearest')
-        ax.set_title(titulo, color='#cccccc', pad=10)
-        ax.set_xlabel("Spin $j$")
-        ax.set_ylabel("Spin $i$")
-        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
-        
-        for spine in ax.spines.values():
-            spine.set_edgecolor('#444444')
+    with plt.rc_context({
+        'font.family': 'serif',
+        'font.serif': ['Times New Roman', 'DejaVu Serif', 'serif'],
+        'mathtext.fontset': 'cm',
+        'font.size': 10,
+        'axes.labelsize': 11,
+        'axes.titlesize': 11,
+        'xtick.labelsize': 9,
+        'ytick.labelsize': 9,
+        'axes.linewidth': 0.8,
+        'text.color': 'black',
+        'axes.labelcolor': 'black',
+        'xtick.color': 'black',
+        'ytick.color': 'black',
+    }):
+        fig, axes = plt.subplots(1, 2, figsize=(10.4, 4.8), facecolor='white')
 
-    plt.tight_layout()
-    fig_path = f"figura2_ising_{session_id}.png"
-    plt.savefig(fig_path, dpi=300, facecolor='#1a1a2e', bbox_inches='tight')
-    plt.close()
-    
-    print(f"\n[Figura 2] Heatmaps com 3 painéis salvos com sucesso em: {fig_path}")
+        cmap = matplotlib.colormaps.get_cmap('jet').copy()
+        cmap.set_bad(color='white')
+
+        paineis = [
+            (C_emp_masked, "Covariância Empírica"),
+            (C_model_masked, "Covariância Reconstruída"),
+        ]
+
+        for i, (mat, titulo) in enumerate(paineis):
+            ax = axes[i]
+            ax.set_facecolor('white')
+
+            mat_vis = np.asarray(mat, dtype=np.float64)
+            if np.isnan(mat_vis).all():
+                ax.set_title(titulo + " (Falhou/Timeout)", color='black', pad=10)
+                ax.axis('off')
+                continue
+
+            im = ax.imshow(
+                mat_vis,
+                cmap=cmap,
+                vmin=0.0,
+                vmax=cov_vmax,
+                aspect='auto',
+                interpolation='nearest'
+            )
+            ax.set_title(titulo, color='black', pad=10)
+            ax.set_xlabel("Spin $j$")
+            ax.set_ylabel("Spin $i$")
+            fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+            for spine in ax.spines.values():
+                spine.set_edgecolor('black')
+
+        plt.tight_layout()
+        fig_path = f"figura2_ising_{session_id}.png"
+        plt.savefig(fig_path, dpi=300, facecolor='white', bbox_inches='tight')
+        plt.close(fig)
+
+    print(f"\n[Figura 2] Heatmaps com 2 painéis salvos com sucesso em: {fig_path}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -3092,7 +3064,7 @@ def gerar_figura3(spin_matrix: np.ndarray, resultados_inferencia: dict,
                   filename_suffix: str | None = None,
                   model_samples: np.ndarray | None = None,
                   diagnose_pairs: bool = True,
-                  n_amostras_mc: int = 200_000,
+                  n_amostras_mc: int = 100_000,
                   compact_stdout: bool = False):
     """
     Figura 3: Correlação de Tripletos (Schneidman / Hall & Bialek).
@@ -3361,8 +3333,9 @@ def gerar_figura3(spin_matrix: np.ndarray, resultados_inferencia: dict,
 def gerar_figura3_multimodo(spin_matrix: np.ndarray, resultados_inferencia: dict,
                             session_id: str,
                             adjacency_mask: np.ndarray | None = None,
-                            triplet_modes: list[str] | tuple[str, ...] = ("triangles",),
-                            n_amostras_mc: int = 200_000):
+                            triplet_modes: list[str] | tuple[str, ...] = ("all",),
+                            n_amostras_mc: int = 100_000,
+                            model_samples: np.ndarray | None = None):
     """
     Roda a Figura 3 nos filtros topologicos de tripletos solicitados e salva um resumo.
     """
@@ -3392,14 +3365,22 @@ def gerar_figura3_multimodo(spin_matrix: np.ndarray, resultados_inferencia: dict
         f"triangulos={topologia_counts['triangulos']}"
     )
 
-    model_samples = None
     if N > 20 and "multipliers" in res_vals and "ERROR" not in res_vals:
-        model_samples = _amostrar_modelo_metropolis(
-            res_vals["multipliers"],
-            N,
-            n_amostras_mc,
-            label="tripletos multimodo"
-        )
+        if model_samples is not None:
+            model_samples = np.asarray(model_samples, dtype=np.float64)
+            if model_samples.ndim != 2 or model_samples.shape[1] != N:
+                raise ValueError(
+                    f"Amostras do modelo inválidas para Figura 3: esperado (*, {N}), "
+                    f"recebido {model_samples.shape}."
+                )
+            print(f"  [Metropolis] Figura 3 reutilizando {model_samples.shape[0]:,} amostras do modelo.")
+        else:
+            model_samples = _amostrar_modelo_metropolis(
+                res_vals["multipliers"],
+                N,
+                n_amostras_mc,
+                label="tripletos multimodo"
+            )
 
     resultados = []
     for i, mode in enumerate(triplet_modes):
@@ -3579,7 +3560,9 @@ def _plot_Q_discreto(ax, q_values, p_values, label, color, marker, linestyle="-"
 
 
 def gerar_figura4(spin_matrix: np.ndarray, resultados_inferencia: dict,
-                  session_id: str):
+                  session_id: str,
+                  model_samples: np.ndarray | None = None,
+                  n_amostras_mc: int = 100_000):
     """
     Figura 4: Distribuição de Atividade Coletiva P(Q).
     
@@ -3617,8 +3600,18 @@ def gerar_figura4(spin_matrix: np.ndarray, resultados_inferencia: dict,
         print(f"  [Modelo] Pairwise exato (2^{N} = {2**N} estados).")
         q_exact, p_exact = _distribuicao_Q_pairwise_exato(multipliers, N)
     else:
-        print(f"  [Modelo] Pairwise por Monte Carlo (N={N} > 20).")
-        Q_pairwise_mc = _distribuicao_Q_pairwise_mc(multipliers, N)
+        if model_samples is not None:
+            model_samples = np.asarray(model_samples, dtype=np.float64)
+            if model_samples.ndim != 2 or model_samples.shape[1] != N:
+                raise ValueError(
+                    f"Amostras do modelo inválidas para Figura 4: esperado (*, {N}), "
+                    f"recebido {model_samples.shape}."
+                )
+            print(f"  [Modelo] Pairwise reutilizando {model_samples.shape[0]:,} amostras Monte Carlo.")
+            Q_pairwise_mc = _calcular_Q(model_samples)
+        else:
+            print(f"  [Modelo] Pairwise por Monte Carlo (N={N} > 20).")
+            Q_pairwise_mc = _distribuicao_Q_pairwise_mc(multipliers, N, n_amostras=int(n_amostras_mc))
     
     # 4. Estatísticas de suscetibilidade
     chi_emp = N * np.var(Q_emp)

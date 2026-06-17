@@ -1,4 +1,5 @@
 import asyncio
+import glob
 import os
 import numpy as np
 import networkx as nx
@@ -14,7 +15,16 @@ from src.community import (
     extract_subcommunity_graph_with_kcore,
     deduplicate_handles_in_graph,
 )
-from src.report import generate_global_report, generate_subcommunity_report, get_next_available_index
+from src.report import (
+    generate_global_report,
+    generate_subcommunity_report,
+    get_next_available_index,
+)
+from src.output_paths import (
+    canonical_artifact_stem,
+    get_next_core_user_id,
+    plot_folder_name,
+)
 from src.visualization import generate_network_visualization
 from src.posts import collect_community_posts_df, interactive_select_gexf, interactive_select_csv
 from src.analysis import analyze_word_frequency
@@ -85,14 +95,126 @@ def best_kcore_choice(scenarios):
     return selected_k, score
 
 
+def ising_method_artifact_slug(method_name):
+    """
+    Nome curto e estavel para artefatos da inferencia Ising.
+    """
+    key = str(method_name or "").strip().lower()
+    if "custom" in key:
+        return "mch_custom"
+    if "enumerate" in key or "exact" in key or "exato" in key:
+        return "enumerate"
+    if "mch" in key:
+        return "mch_coniii"
+    return "ising"
+
+
+def move_artifact_replace(src, dst):
+    """
+    Move um artefato gerado no cwd para o destino final, substituindo versoes antigas.
+    """
+    if not os.path.exists(src):
+        return False
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    if os.path.exists(dst):
+        os.remove(dst)
+    import shutil
+    shutil.move(src, dst)
+    return True
+
+
+def interactive_select_ising_artifacts(plots_base):
+    """
+    Seleciona uma pasta de comunidade com matriz_ising_*.csv e multipliers_*.npy.
+    """
+    candidates = []
+    for root, _, files in os.walk(plots_base):
+        matrices = sorted(f for f in files if f.startswith("matriz_ising_") and f.endswith(".csv"))
+        multipliers = sorted(f for f in files if f.startswith("multipliers_") and f.endswith(".npy"))
+        if matrices and multipliers:
+            candidates.append((root, matrices, multipliers))
+
+    candidates.sort(key=lambda item: os.path.relpath(item[0], plots_base))
+    if not candidates:
+        print(f"[Aviso] Nenhuma pasta com matriz_ising_*.csv e multipliers_*.npy encontrada em {plots_base}")
+        return None
+
+    print("\nANÁLISES ISING DISPONÍVEIS:")
+    for i, (root, matrices, multipliers) in enumerate(candidates):
+        rel_path = os.path.relpath(root, plots_base)
+        print(f"[{i}] {rel_path} | matriz={matrices[0]} | multipliers={multipliers[-1]}")
+
+    try:
+        idx = int(input("\nEscolha o índice da comunidade: ").strip())
+        if not 0 <= idx < len(candidates):
+            return None
+    except ValueError:
+        return None
+
+    root, matrices, multipliers = candidates[idx]
+    matrix_name = matrices[0]
+    multiplier_name = multipliers[-1]
+
+    if len(matrices) > 1:
+        print("\nMATRIZES DISPONÍVEIS:")
+        for i, name in enumerate(matrices):
+            print(f"[{i}] {name}")
+        try:
+            matrix_idx = int(input(f"Escolha a matriz [padrão: 0]: ").strip() or 0)
+            if 0 <= matrix_idx < len(matrices):
+                matrix_name = matrices[matrix_idx]
+        except ValueError:
+            pass
+
+    if len(multipliers) > 1:
+        print("\nMULTIPLIERS DISPONÍVEIS:")
+        for i, name in enumerate(multipliers):
+            print(f"[{i}] {name}")
+        try:
+            multiplier_idx = int(input(f"Escolha os multipliers [padrão: {len(multipliers) - 1}]: ").strip() or (len(multipliers) - 1))
+            if 0 <= multiplier_idx < len(multipliers):
+                multiplier_name = multipliers[multiplier_idx]
+        except ValueError:
+            pass
+
+    return {
+        "output_dir": root,
+        "matrix_path": os.path.join(root, matrix_name),
+        "multipliers_path": os.path.join(root, multiplier_name),
+    }
+
+
+def prompt_int(label, default, minimum=1):
+    while True:
+        raw = input(f"{label} [{default}]: ").strip()
+        if not raw:
+            return int(default)
+        try:
+            value = int(raw.replace(".", "").replace(",", ""))
+            if value >= minimum:
+                return value
+        except ValueError:
+            pass
+        print(f"  Informe um inteiro >= {minimum}.")
+
+
+def prompt_float(label, default):
+    raw = input(f"{label} [{default}]: ").strip()
+    if not raw:
+        return float(default)
+    try:
+        return float(raw.replace(",", "."))
+    except ValueError:
+        print(f"  Valor inválido. Usando padrão {default}.")
+        return float(default)
+
+
 async def main():
     print("=" * 50)
     print("DETECÇÃO E ANÁLISE DE COMUNIDADES NO BLUESKY")
     print("=" * 50)
     base_dir = os.path.dirname(os.path.abspath(__file__))
     
-    # Session ID para anonimização de pastas/arquivos
-    session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
     safe_limit = await calibrate_rate_limit(max_test_concurrency=100)
     
     while True:
@@ -100,11 +222,12 @@ async def main():
         print("[1] Nova Coleta e Análise de Comunidades (core_user)")
         print("[2] Análise Estatística de Posts (GEXF Existente)")
         print("[3] Aplicação do Modelo de Máxima Entropia (Ising)")
-        print("[4] Sair")
+        print("[4] Análise de Suscetibilidade")
+        print("[5] Sair")
         
         opcao = input("\nEscolha uma opção: ").strip()
         
-        if opcao == '4' or opcao.lower() == 'sair': break
+        if opcao == '5' or opcao.lower() == 'sair': break
 
         if opcao == '2':
             gexf_base = os.path.join(base_dir, "data", "processed", "gexf")
@@ -129,12 +252,17 @@ async def main():
                         global_word_timestamps=global_word_timestamps
                     )
                     
-                    plots_out = os.path.join(base_dir, "data", "plots", f"sessao_{session_id}", str(user_count))
+                    comm_name = canonical_artifact_stem(gexf_path)
+                    plots_out = os.path.join(
+                        base_dir,
+                        "data",
+                        "plots",
+                        plot_folder_name(gexf_path, user_count),
+                    )
                     plot_figure_b1(stats_df, total_users=user_count, output_dir=plots_out, filename="figure_B1.png")
                     print(f"\n[Sucesso] Gráfico Figure B1 salvo em: {plots_out}")
 
                     # --- Fase 1: Salva CSV COMPLETO para inspeção manual ---
-                    comm_name = os.path.splitext(os.path.basename(gexf_path))[0]
                     full_csv_path = os.path.join(plots_out, f"keywords_todas_{comm_name}.csv")
                     stats_df_sorted = stats_df.sort_values(by='n_users', ascending=False)
                     stats_df_sorted['source_gexf'] = os.path.basename(gexf_path)
@@ -250,6 +378,8 @@ async def main():
             continue
 
         if opcao == '3':
+            # ID interno apenas para arquivos temporarios gerados pelo backend Ising.
+            ising_run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
             plots_base = os.path.join(base_dir, "data", "plots")
             # 1. Seleciona as keywords (modelo)
             kw_path = interactive_select_csv(plots_base, keyword_filter="keywords_filtradas")
@@ -267,6 +397,7 @@ async def main():
                         from src.ising_coniii import (
                             construir_mascara_adjacencia,
                             inferir_modelo,
+                            _amostrar_modelo_metropolis,
                             gerar_figura2,
                             gerar_figura3_multimodo,
                             gerar_figura4,
@@ -302,20 +433,27 @@ async def main():
                         mch_sample_size = 100_000
                         mch_maxiter = 200
                         mch_interactive_continue = False
-                        import shutil
                         import json
                         
-                        plots_out = os.path.dirname(kw_path)
-                        comm_name = os.path.splitext(os.path.basename(gexf_path))[0]
+                        comm_name = canonical_artifact_stem(gexf_path)
+                        dataset_plots_dir = os.path.dirname(kw_path)
+                        plots_out = os.path.join(dataset_plots_dir, comm_name)
+                        os.makedirs(plots_out, exist_ok=True)
                         cache_path = os.path.join(plots_out, f".cache_usersets_{comm_name}.json")
+                        legacy_cache_path = os.path.join(dataset_plots_dir, f".cache_usersets_{comm_name}.json")
+                        print(f"[Saida Ising] Artefatos desta subcomunidade serao salvos em: {plots_out}")
                         
-                        if os.path.exists(cache_path):
+                        if os.path.exists(cache_path) or os.path.exists(legacy_cache_path):
+                            cache_read_path = cache_path if os.path.exists(cache_path) else legacy_cache_path
                             print("\n[Memória] Arquivo de coletas em Cache da Opção 2 recuperado!")
                             print(f"[Zero API] O sistema abortou o download duplo de 3.000 posts e os injetou instantaneamente do seu Disco local.")
-                            with open(cache_path, 'r', encoding='utf-8') as f:
+                            with open(cache_read_path, 'r', encoding='utf-8') as f:
                                 loaded_user_word_sets, all_community_users = json.load(f)
                                 # Convert lists back to sets
                                 user_word_sets = {k: set(v) for k, v in loaded_user_word_sets.items()}
+                            if cache_read_path != cache_path:
+                                with open(cache_path, "w", encoding="utf-8") as f:
+                                    json.dump((loaded_user_word_sets, all_community_users), f)
                         else:
                             # 3. Coleta dados estrangeiros que não possuam memória na mesma base
                             print("\n[Coleta HTTP] Nenhuma memória viva dessa rede. Iniciando nova coleta via API...")
@@ -333,9 +471,8 @@ async def main():
                         )
 
                         if not ising_matrix.empty:
-                            plots_out = os.path.dirname(kw_path)
                             # Nome inclui o nome da comunidade para diferenciar
-                            comm_name = os.path.splitext(os.path.basename(gexf_path))[0]
+                            comm_name = canonical_artifact_stem(gexf_path)
                             n_keywords_csv = ising_matrix.shape[1]
                             n_keywords_present = int((ising_matrix.values > 0).any(axis=0).sum())
                             print(
@@ -413,7 +550,7 @@ async def main():
                             
                             node_names = ising_matrix.index.tolist()
                             adjacency_mask = construir_mascara_adjacencia(gexf_path, node_names)
-                            aij_path = os.path.join(plots_out, f"matriz_Aij_{comm_name}_{session_id}.csv")
+                            aij_path = os.path.join(plots_out, f"matriz_Aij_{comm_name}.csv")
                             pd.DataFrame(
                                 adjacency_mask.astype(np.int8),
                                 index=node_names,
@@ -425,7 +562,7 @@ async def main():
                             print(f"\n[Ising] Iniciando inferência para {S.shape[0]} users × {S.shape[1]} keywords...")
                             resultados = inferir_modelo(
                                 spin_matrix=S,
-                                session_id=session_id,
+                                session_id=ising_run_id,
                                 lam=0.001,
                                 adjacency_mask=adjacency_mask,
                                 metodo_inferencia=metodo_inferencia,
@@ -434,6 +571,27 @@ async def main():
                                 mch_learning_profile=mch_learning_profile,
                                 mch_interactive_continue=mch_interactive_continue
                             )
+                            result_values = next(iter(resultados.values()), {})
+                            method_slug = ising_method_artifact_slug(
+                                result_values.get("metodo", metodo_inferencia)
+                                if isinstance(result_values, dict)
+                                else metodo_inferencia
+                            )
+                            model_samples_figuras = None
+                            n_amostras_figuras = 100_000
+                            n_users_figuras = S.shape[0]
+                            if (
+                                isinstance(result_values, dict)
+                                and "multipliers" in result_values
+                                and "ERROR" not in result_values
+                                and n_users_figuras > 20
+                            ):
+                                model_samples_figuras = _amostrar_modelo_metropolis(
+                                    result_values["multipliers"],
+                                    n_users_figuras,
+                                    n_amostras_figuras,
+                                    label="figuras Ising"
+                                )
                             
                             # 6. Figura 2 (3 painéis)
                             print("\n[Ising] Gerando figuras e relatórios...")
@@ -442,53 +600,76 @@ async def main():
                                 resultados_inferencia=resultados,
                                 gexf_path=gexf_path,
                                 node_names=node_names,
-                                session_id=session_id
+                                session_id=ising_run_id,
+                                model_samples=model_samples_figuras,
+                                n_amostras_mc=n_amostras_figuras
                             )
                             
-                            # 6.5. Figura 3 (Correlação de Tripletos) apenas para triângulos topológicos
-                            triplet_modes = ["triangles"]
+                            # 6.5. Figura 3 (Correlação de Tripletos), como em Hall & Bialek: todos os trios.
+                            triplet_modes = ["all"]
                             gerar_figura3_multimodo(
                                 spin_matrix=S,
                                 resultados_inferencia=resultados,
-                                session_id=session_id,
+                                session_id=ising_run_id,
                                 adjacency_mask=adjacency_mask,
-                                triplet_modes=triplet_modes
+                                triplet_modes=triplet_modes,
+                                n_amostras_mc=n_amostras_figuras,
+                                model_samples=model_samples_figuras
                             )
                             
                             # 6.6. Figura 4 (Distribuição de Atividade Coletiva Q)
                             gerar_figura4(
                                 spin_matrix=S,
                                 resultados_inferencia=resultados,
-                                session_id=session_id
+                                session_id=ising_run_id,
+                                model_samples=model_samples_figuras,
+                                n_amostras_mc=n_amostras_figuras
                             )
                             
                             # 7. Move os artefatos gerados para a pasta da comunidade
-                            fig_orig = f"figura2_ising_{session_id}.png"
-                            fig3_summary_orig = f"figura3_tripletos_resumo_{session_id}.csv"
-                            fig4_orig = f"figura4_distribuicao_Q_{session_id}.png"
-                            csv_orig = f"comparacao_metodos_{session_id}.csv"
-                            npy_orig = f"multiplicadores_ising_{session_id}.npy"
+                            fig_orig = f"figura2_ising_{ising_run_id}.png"
+                            fig3_summary_orig = f"figura3_tripletos_resumo_{ising_run_id}.csv"
+                            fig4_orig = f"figura4_distribuicao_Q_{ising_run_id}.png"
+                            csv_orig = f"comparacao_metodos_{ising_run_id}.csv"
+                            npy_orig = f"multiplicadores_ising_{ising_run_id}.npy"
                             
-                            if os.path.exists(fig_orig):
-                                shutil.move(fig_orig, os.path.join(plots_out, f"figura2_coniii_{comm_name}_{session_id}.png"))
+                            move_artifact_replace(
+                                fig_orig,
+                                os.path.join(plots_out, f"figura2_{method_slug}_{comm_name}.png")
+                            )
                             for mode in triplet_modes:
-                                fig3_orig = f"figura3_tripletos_{mode}_{session_id}.png"
-                                if os.path.exists(fig3_orig):
-                                    shutil.move(
-                                        fig3_orig,
-                                        os.path.join(plots_out, f"figura3_tripletos_{mode}_{comm_name}_{session_id}.png")
-                                    )
-                            if os.path.exists(fig3_summary_orig):
-                                shutil.move(
-                                    fig3_summary_orig,
-                                    os.path.join(plots_out, f"figura3_tripletos_resumo_{comm_name}_{session_id}.csv")
+                                fig3_orig = f"figura3_tripletos_{mode}_{ising_run_id}.png"
+                                move_artifact_replace(
+                                    fig3_orig,
+                                    os.path.join(plots_out, f"figura3_tripletos_{mode}_{method_slug}_{comm_name}.png")
                                 )
-                            if os.path.exists(fig4_orig):
-                                shutil.move(fig4_orig, os.path.join(plots_out, f"figura4_distribuicao_Q_{comm_name}_{session_id}.png"))
-                            if os.path.exists(csv_orig):
-                                shutil.move(csv_orig, os.path.join(plots_out, f"comparativo_coniii_{comm_name}_{session_id}.csv"))
-                            if os.path.exists(npy_orig):
-                                shutil.move(npy_orig, os.path.join(plots_out, f"multipliers_{comm_name}_{session_id}.npy"))
+                            move_artifact_replace(
+                                fig3_summary_orig,
+                                os.path.join(plots_out, f"figura3_tripletos_resumo_{method_slug}_{comm_name}.csv")
+                            )
+                            move_artifact_replace(
+                                fig4_orig,
+                                os.path.join(plots_out, f"figura4_distribuicao_Q_{method_slug}_{comm_name}.png")
+                            )
+                            move_artifact_replace(
+                                csv_orig,
+                                os.path.join(plots_out, f"comparativo_{method_slug}_{comm_name}.csv")
+                            )
+                            move_artifact_replace(
+                                npy_orig,
+                                os.path.join(plots_out, f"multipliers_{method_slug}_{comm_name}.npy")
+                            )
+                            for checkpoint_orig in glob.glob(f"mch*_melhor_{ising_run_id}*.npy"):
+                                if os.path.basename(checkpoint_orig).startswith("mch_custom_melhor_"):
+                                    os.remove(checkpoint_orig)
+                                    continue
+                                checkpoint_name = os.path.basename(checkpoint_orig).replace(f"_{ising_run_id}", "")
+                                move_artifact_replace(
+                                    checkpoint_orig,
+                                    os.path.join(plots_out, checkpoint_name)
+                                )
+                            for checkpoint_temp in glob.glob(os.path.join(plots_out, "mch_custom_melhor_*.npy")):
+                                os.remove(checkpoint_temp)
                                 
                             print(f"\n[Sucesso] Todos os artefatos Ising movidos para: {plots_out}")
                         else:
@@ -496,6 +677,66 @@ async def main():
                             print("[Erro] Falha ao gerar matriz de Ising.")
                     except Exception as e:
                         print(f"[Erro] Falha na aplicação do modelo: {e}")
+            continue
+
+        if opcao == '4':
+            plots_base = os.path.join(base_dir, "data", "plots")
+            artifacts = interactive_select_ising_artifacts(plots_base)
+            if not artifacts:
+                continue
+
+            try:
+                from src.susceptibility import executar_analise_suscetibilidade
+
+                matrix_df = pd.read_csv(artifacts["matrix_path"], index_col=0)
+                spin_matrix = matrix_df.values.astype(np.int64)
+                spin_matrix = np.where(spin_matrix > 0, 1, -1).astype(np.int64)
+                multipliers = np.load(artifacts["multipliers_path"])
+                artifact_stem = canonical_artifact_stem(artifacts["matrix_path"])
+
+                print("\n[Análise de Suscetibilidade]")
+                print(f"  Matriz: {artifacts['matrix_path']}")
+                print(f"  Multipliers: {artifacts['multipliers_path']}")
+                print(f"  Usuários/spins: {spin_matrix.shape[0]} | keywords/amostras empíricas: {spin_matrix.shape[1]}")
+                print("  Figura 5 (Hall & Bialek 2019): χ por campo uniforme Δh.")
+                print("    Preto: modelo pairwise | Ciano: modelo independente | Vermelho: Δh=0.")
+                print("  Figura 6 (Hall & Bialek 2019): χ por número de indivíduos forçados em σ=+1.")
+                print("    Barras de erro: desvio padrão entre configurações de indivíduos forçados.")
+
+                field_min = prompt_float("Campo mínimo Δh", -1.0)
+                field_max = prompt_float("Campo máximo Δh", 3.0)
+                field_points = prompt_int("Quantidade de pontos em Δh", 41, minimum=3)
+                samples_per_field = prompt_int("Amostras Monte Carlo por ponto da Figura 5", 100000, minimum=1000)
+                default_max_forced = min(11, max(0, spin_matrix.shape[0] - 1))
+                max_forced = prompt_int("Máximo de indivíduos forçados para Figura 6", default_max_forced, minimum=0)
+                forced_configurations = prompt_int("Configurações por quantidade forçada", 25, minimum=1)
+                samples_per_forced_configuration = prompt_int(
+                    "Amostras Monte Carlo por configuração da Figura 6",
+                    100000,
+                    minimum=1000,
+                )
+
+                outputs = executar_analise_suscetibilidade(
+                    spin_matrix,
+                    multipliers,
+                    output_dir=artifacts["output_dir"],
+                    artifact_stem=artifact_stem,
+                    field_min=field_min,
+                    field_max=field_max,
+                    field_points=field_points,
+                    samples_per_field=samples_per_field,
+                    max_forced=max_forced,
+                    forced_configurations=forced_configurations,
+                    samples_per_forced_configuration=samples_per_forced_configuration,
+                )
+
+                print("\n[Sucesso] Análise de suscetibilidade concluída.")
+                print(f"  Figura 5: {outputs['figura5_png']}")
+                print(f"  Dados Figura 5: {outputs['figura5_csv']}")
+                print(f"  Figura 6: {outputs['figura6_png']}")
+                print(f"  Dados Figura 6: {outputs['figura6_csv']}")
+            except Exception as e:
+                print(f"[Erro] Falha na análise de suscetibilidade: {type(e).__name__}: {e}")
             continue
 
         if opcao == '1':
@@ -573,8 +814,10 @@ async def main():
             # Pastas Globais Anônimas
             processed_dir = os.path.join(base_dir, "data", "processed")
             gexf_dir = os.path.join(processed_dir, "gexf")
-            reports_dir = os.path.join(processed_dir, "reports", f"sessao_{session_id}")
-            png_dir = os.path.join(processed_dir, "png", f"sessao_{session_id}")
+            reports_dir = os.path.join(processed_dir, "reports")
+            png_dir = os.path.join(processed_dir, "png")
+            core_user_id = get_next_core_user_id(processed_dir)
+            core_user_stem = f"core_user_{core_user_id}"
             
             os.makedirs(gexf_dir, exist_ok=True)
             os.makedirs(reports_dir, exist_ok=True)
@@ -603,7 +846,7 @@ async def main():
                         "avg_degree_per_user": score,
                         "selected": k_core == selected_k,
                     })
-            kcore_csv_path = os.path.join(reports_dir, f"cenarios_kcore_res_{chosen_res}.csv")
+            kcore_csv_path = os.path.join(reports_dir, f"{core_user_stem}.csv")
             pd.DataFrame(kcore_rows).to_csv(kcore_csv_path, index=False, encoding="utf-8-sig")
             print(f"\n[K-core] Cenários completos salvos em: {kcore_csv_path}")
             
@@ -630,7 +873,7 @@ async def main():
                     continue
 
                 exported_indices.append(disp_id)
-                nx.write_gexf(sub_G, os.path.join(gexf_dir, f"comunidade_{disp_id}_{core_user}.gexf"))
+                nx.write_gexf(sub_G, os.path.join(gexf_dir, f"comunidade_{disp_id}.gexf"))
                 generate_subcommunity_report(
                     sub_G,
                     disp_id,
@@ -638,6 +881,7 @@ async def main():
                     output_dir=reports_dir,
                     k_core=selected_k,
                     k_core_score=selected["score"],
+                    core_user=core_user,
                     verbose=False,
                 )
                 generate_network_visualization(
@@ -654,11 +898,18 @@ async def main():
             if export_failures:
                 print(f"[Export] {export_failures} subcomunidade(s) ignorada(s) por ficarem com <2 usuarios.")
                 
-            generate_global_report(G, chosen_data["num_communities"], chosen_data["modularity"], output_dir=reports_dir, selected_indices=exported_indices, core_user=core_user)
+            generate_global_report(
+                G,
+                chosen_data["num_communities"],
+                chosen_data["modularity"],
+                output_dir=reports_dir,
+                selected_indices=exported_indices,
+                core_user=core_user,
+                core_user_id=core_user_id,
+            )
             
-            # Global GEXF: rede_{session_id}.gexf (Anônimo)
-            nx.write_gexf(G, os.path.join(gexf_dir, f"rede_{session_id}.gexf"))
-            generate_network_visualization(G, output_dir=png_dir, filename="rede_global.png")
+            nx.write_gexf(G, os.path.join(gexf_dir, f"{core_user_stem}.gexf"))
+            generate_network_visualization(G, output_dir=png_dir, filename=f"{core_user_stem}.png")
             print(f"\n[Sucesso] Arquivos anônimos em {processed_dir}")
             print(f"Consulte o relatório em {reports_dir} para identificar o usuário.")
             

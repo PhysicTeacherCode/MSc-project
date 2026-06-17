@@ -5,6 +5,30 @@ def _temporal_std_days(timestamps):
     """
     Desvio padrao temporal dos usos de uma palavra, em dias.
     """
+    if isinstance(timestamps, dict):
+        n = int(timestamps.get("n", 0))
+        sum_seconds = float(timestamps.get("sum", 0.0))
+        sumsq_seconds = float(timestamps.get("sumsq", 0.0))
+        if n < 2:
+            return np.nan
+        mean = sum_seconds / n
+        variance = max(0.0, (sumsq_seconds / n) - mean * mean)
+        return float(np.sqrt(variance) / 86400.0)
+
+    if (
+        isinstance(timestamps, (list, tuple))
+        and len(timestamps) == 3
+        and isinstance(timestamps[0], (int, np.integer))
+    ):
+        n = int(timestamps[0])
+        if n < 2:
+            return np.nan
+        sum_seconds = float(timestamps[1])
+        sumsq_seconds = float(timestamps[2])
+        mean = sum_seconds / n
+        variance = max(0.0, (sumsq_seconds / n) - mean * mean)
+        return float(np.sqrt(variance) / 86400.0)
+
     if not timestamps or len(timestamps) < 2:
         return np.nan
 
@@ -52,9 +76,7 @@ def analyze_word_frequency(global_word_counts, user_word_sets, total_users=None,
     stats = []
     for word, count in global_word_counts.items():
         n_users = word_user_count.get(word, 0)
-        if n_users < 2:  # pelo menos 2 usuários para ser relevante
-            continue
-        
+
         entry = {
             "word": word,
             "occurrences": count,
@@ -65,7 +87,7 @@ def analyze_word_frequency(global_word_counts, user_word_sets, total_users=None,
         stats.append(entry)
             
     result_df = pd.DataFrame(stats)
-    print(f"[Análise] Concluída. {len(result_df)} palavras com >= 2 usuários.")
+    print(f"[Análise] Concluída. {len(result_df)} palavras analisadas.")
     return result_df
 
 def create_ising_matrix_from_sets(user_word_sets, keywords, all_users):
